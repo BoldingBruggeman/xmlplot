@@ -25,7 +25,7 @@ setup(name='xmlplot',
 #                'nml2xml=editscenario.nml2xml:main',
 #          ]
 #      },
-#KB      install_requires=['xmlstore'], - when in pypi
-      packages=['xmlplot'],
+      packages=['xmlplot', 'xmlplot/data'],
+      package_data={'xmlplot': ['icons/*', 'schemas/*/*']}, 
       include_package_data=True,
       zip_safe=False)
