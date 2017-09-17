@@ -687,7 +687,7 @@ class VariableStore(UserDict.DictMixin):
         """
         return dict(defaultdimensioninfo)
 
-    def getVariableTree(self,path,otherstores={},plottableonly=True):
+    def getVariableTree(self,otherstores={},plottableonly=True):
         """Returns a tree representation of the variables in the data store,
         represented by an xmlstore.TypedStore object that uses the short names
         of variables as node names.
