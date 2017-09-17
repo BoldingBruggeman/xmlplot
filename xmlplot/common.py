@@ -691,11 +691,11 @@ class VariableStore(UserDict.DictMixin):
         """Returns a tree representation of the variables in the data store,
         represented by an xmlstore.TypedStore object that uses the short names
         of variables as node names.
-        
+
         The data type of each variable node is boolean, which allows the use of
         the returned object as a basis for a tree with checkboxes for each
         variable (e.g. for selecting variables to include in GOTM-GUI reports).
-        
+
         All variables that are present in the store but not represented by a node
         in the store schema will be added to the node named "other" in the tree,
         if that node is present. Nodes that are present in the schema, but whose
@@ -704,87 +704,43 @@ class VariableStore(UserDict.DictMixin):
         of nodes representing a variable will set to the long name of the variable
         as it is known in the variable store if it was not yet set.
         """
-        # Get the schema as XML DOM object.
-        xmlschema = xml.dom.minidom.parse(path)
-        
+        impl = xml.dom.minidom.getDOMImplementation()
+        xmlschema = impl.createDocument(None, 'element', None)
+        root = xmlschema.documentElement
+        root.setAttribute('name', 'root')
+
+        def addNode(parent, path, label=None):
+            for node in xmlstore.util.findDescendantNodes(parent, ['element']):
+                if node.getAttribute('name') == path:
+                    return node
+            node = xmlschema.createElement('element')
+            if label is None:
+                label = path.replace('_', ' ')
+            node.setAttribute('name', path)
+            node.setAttribute('label', label)
+            node.setAttribute('type', 'bool')
+            parent.appendChild(node)
+            return node
+
         # Get dictionary linking variable short names to variable long names.
         # it will be used to check whether a node name matches a variable name,
         # and if so also to fill in the node label with the variable long name.
         vardict = self.getVariableLongNames()
-        
+
         # Remove non-plottable variables
         if plottableonly:
-            plottable = self.getPlottableVariableNames()
-            for varname in vardict.keys():
-                if varname not in plottable: del vardict[varname]
-        
-        # Prune the tree and fill in node labels where needed.
-        found = VariableStore.filterNodes(xmlschema.documentElement,vardict)
-        
-        # Get a list of variables (short names) that were not present in the schema.
-        # We will add these to the schema node "other", if that is present.
-        remaining = set(vardict.keys()) - found
-        
-        # Find the "other" node.
-        for other in xmlschema.getElementsByTagName('element'):
-            if other.getAttribute('name')=='other': break
+            names = self.getPlottableVariableNames()
         else:
-            other = None
+            names = self.getVariableNames()
 
-        # If the "other" node is present, add the remaining variable if there
-        # are any; if there are none, remove the "other" node form the tree.
-        if other is not None:
-            if len(remaining)==0:
-                other.parentNode.removeChild(other)
-            else:
-                # Sort remaining variables alphabetically on their long names
-                for varid in sorted(remaining,cmp=lambda x,y: cmp(vardict[x].lower(), vardict[y].lower())):
-                    el = xmlschema.createElement('element')
-                    el.setAttribute('name',varid)
-                    el.setAttribute('label',vardict[varid])
-                    el.setAttribute('type','bool')
-                    other.appendChild(el)
-                    
-        # The XML schema has been pruned and overriden where needed.
-        # Return an TypedStore based on it.
-        return xmlstore.xmlstore.TypedStore(xmlschema,otherstores=otherstores)
-
-    @staticmethod
-    def filterNodes(node,vardict):
-        """Takes a node in the schema, and checks whether it and its children
-        are present in the supplied dictionary. Nodes not present in the
-        dictionary are removed unless they have children that are present in
-        the dictionary. This function returns a list of dictionary keys that
-        we found in/below the node.
-        
-        This function is called recursively, and will be used internally only
-        by getVariableTree.
-        """
-        nodeids = set()
-
-        # Get the name of the node.
-        nodeid = node.getAttribute('name')
-        assert nodeid!='', 'Node lacks "name" attribute.'
-        
-        # If the name of the node matches a key in the dictionary,
-        # fill in its label and data type, and add it to the result.
-        if nodeid in vardict:
-            if not node.hasAttribute('label'):
-                node.setAttribute('label',vardict[nodeid])
-            node.setAttribute('type','bool')
-            nodeids.add(nodeid)
-            
-        # Test child nodes and append their results as well.
-        for ch in xmlstore.util.findDescendantNodes(node,['element']):
-            nodeids |= VariableStore.filterNodes(ch,vardict)
-            
-        # If the current node and its children did not match a key in the
-        # dictionary, remove the current node.
-        if len(nodeids)==0 and nodeid!='other':
-            node.parentNode.removeChild(node)
-
-        # Return a list of dictionary keys that matched.
-        return nodeids
+        for varname in names:
+            variable = self.getVariable(varname)
+            parent = root
+            for component in variable.getProperties().get('path', 'Other').split('/'):
+                if component != '':
+                    parent = addNode(parent, component)
+            addNode(parent, varname, label=vardict.get(varname, varname))
+        return xmlstore.xmlstore.TypedStore(xmlschema, otherstores=otherstores)
 
     def getVariable_raw(self,varname):
         """Returns a Variable object for the given original short variable name.
