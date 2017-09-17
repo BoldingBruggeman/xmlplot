@@ -929,9 +929,9 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                     boundvar = coordvar.getProperties()['bounds']
                     stagcoordvar = self.store.getVariable_raw(boundvar)
                     if stagcoordvar is None: print 'WARNING: boundary values for coordinate variable %s are set to variable %s, but this variable is not present in the NetCDF file.' % (coordvar.getName(),boundvar)
-            
+
             class NetCDFWarning(Exception): pass
-            
+
             # Get staggered coordinates over entire domain
             if stagcoordvar is not None:
                 try:
@@ -955,7 +955,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                             stagcoordvar[1:  , :-1] += stagdata[:,:,3]
                             stagcoordvar[1:-1,:] /= 2
                             stagcoordvar[:,1:-1] /= 2
-                
+
                     coordslice_stag = []
                     for slc in coordslice:
                         if isinstance(slc,slice):
@@ -982,11 +982,11 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                     # Problem with specified interface coordinate - make sure they auto-generated instead.
                     print e
                     stagcoordvar = None
-            
+
             if stagcoordvar is None:
                 # Auto-generate the staggered coordinates.
                 coords_stag = xmlplot.common.stagger(coords)
-            
+
             # Insert data dimensions where they are lacking in coordinate
             coords      = xmlplot.common.broadcastSelective(coords,     newcoorddims,dat.shape,               newdimnames)
             coords_stag = xmlplot.common.broadcastSelective(coords_stag,newcoorddims,[l+1 for l in dat.shape],newdimnames)
@@ -994,7 +994,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
             # Assign coordinate values
             varslice.coords     [inewdim] = coords
             varslice.coords_stag[inewdim] = coords_stag
-            
+
             inewdim += 1
 
           # If center coordinates came with a mask, apply that same mask to the data.
@@ -1002,24 +1002,24 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
             dat = numpy.ma.masked_where(datamask,dat,copy=False)
 
           varslice.data = dat
-                  
+
           return varslice
 
     def __init__(self,path=None,*args,**kwargs):
         xmlstore.util.referencedobject.__init__(self)
         xmlplot.common.VariableStore.__init__(self)
-        
+
         self.datafile = None
         self.nc = None
         self.mode = 'r'
 
         self.cachedcoords = {}
         self.defaultcoordinates = {}
-        
+
         # Whether to mask values outside the range specified by valid_min,valid_max,valid_range
         # NetCDF variable attributes (as specified by CF convention)
         self.maskoutsiderange = True
-        
+
         if path is not None:
             if isinstance(path,(tuple,list,basestring)):
                 # Path to a NetCDF file is provided, or a list/tuple of paths.
@@ -1029,7 +1029,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                 self.nc = path
                 self.autoReassignCoordinates()
                 self.relabelVariables()
-                
+
     def __str__(self):
         if self.datafile is None: return ''
         if isinstance(self.datafile,(list,tuple)): return ', '.join(self.datafile)
@@ -1043,7 +1043,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
         res['label'] = var.getLongName()
         res['unit']  = var.getUnit()
         props = var.getProperties()
-        if dimname in ('z','z1'):
+        if dimname in ('z', 'z1', 'zi'):
             res['preferredaxis'] = 'y'
         elif self.isTimeDimension(dimname):
             res['datatype'] = 'datetime'
@@ -1055,27 +1055,27 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
         if props.get('positive','up')=='down':
             res['reversed'] = True
         return res
-                
+
     def save(self,path):
         assert isinstance(self.datafile,basestring),'Only single NetCDF files can be saved.'
         shutil.copyfile(self.datafile,path)
-        
+
     def unlink(self):
         if self.nc is not None:
             # Close NetCDF result file.
             self.nc.close()
             self.nc = None
             self.datafile = None
-            
+
     def load(self,path,mode='r'):
         # Store link to result file, and try to open the CDF file
         self.datafile = path
         self.mode = mode
         nc = self.getcdf()
-        
+
         # Auto-reassign coordinates
         self.autoReassignCoordinates()
-        
+
         # Re-label variables - this must be done after reassignments because relabel requests
         # the variable names, which are then cached and never requested again. Variable names can
         # depend on dimension reassignments, e.g., if some reassignments apply, extra coordinate
@@ -1084,7 +1084,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
 
     def autoReassignCoordinates(self):
         self.defaultcoordinates = {}
-    
+
     def getcdf(self):
         """Returns a NetCDFFile file object representing the NetCDF file
         at the path in self.datafile. The returned object should follow
@@ -1118,7 +1118,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
         nc = self.getcdf()
         if ncvarname not in nc.variables: return None
         return self.NetCDFVariable(self,ncvarname)
-    
+
     def createDimension(self,dimname,length):
         assert self.mode in ('w','a','r+'),'NetCDF file has not been opened for writing.'
         nc = self.getcdf()
@@ -1130,7 +1130,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
 
     def setProperty(self,name,value):
         setattr(self.getcdf(),name,value)
-        
+
     def addVariable(self,varName,dimensions,datatype='d',missingvalue=None):
         assert self.mode in ('w','a','r+'),'NetCDF file has not been opened for writing.'
         nc = self.getcdf()
@@ -1145,7 +1145,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
         else:
             ncvar = nc.createVariable(varName,datatype,dimensions)
         return self.getVariable_raw(varName)
-                
+
     def copyVariable(self,variable,name=None,dims=None):
         assert self.mode in ('w','a','r+'),'NetCDF file has not been opened for writing.'
         assert isinstance(variable,NetCDFStore.NetCDFVariable),'Added variable must be an existing NetCDF variable object, not %s.' % str(variable)
@@ -1178,7 +1178,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
             return 0
         ncdims.sort(cmp=cmpdims)
         return ncdims
-        
+
     def getDimensionLength(self,dimname):
         nc = self.getcdf()
         length = nc.dimensions[dimname]
@@ -1199,7 +1199,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
 
     def getDefaultCoordinateDelta(self,dimname,coord):
         return 1.
-        
+
     def isTimeDimension(self,dimname):
         """See if specified dimension is a time dimension according to COARDS convention.
         """
@@ -1221,23 +1221,23 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
       cdfvar = self.getcdf().variables[dimname]
       if not hasattr(cdfvar,'units'):
           raise ReferenceTimeParseError('variable "%s" lacks "units" attribute.' % (dimname,))
-        
+
       return parseNcTimeUnit(cdfvar.units)
 
 class NetCDFStore_GOTM(NetCDFStore):
     """Class encapsulating a GOTM/GETM-produced NetCDF file.
-    
+
     The file is expected to follow the COARDS/CF convention, and in addition assumes
-    
+
     - the GOTM/GETM convention for storing time-variable depth/leyer heights (h + elev).
     - the GETM convention for curvilinear grids (xic, etac -> lonc, latc)
     """
-    
+
     @staticmethod
     def testFile(nc):
         match = False
         ncvars,ncdims = nc.variables,nc.dimensions
-        
+
         # Test for GETM with curvilinear coordinates
         # (either lon,lat or staggered Cartesian coordinates must be available)
         if ('xic' in ncdims and 'etac' in ncdims and
@@ -1248,7 +1248,7 @@ class NetCDFStore_GOTM(NetCDFStore):
         if 'xc' in ncdims and 'yc' in ncdims and 'lonc' in ncvars and 'latc' in ncvars: match = True
 
         # Test for GOTM convention for depth represented by layer heights and surface elevation.
-        if 'z' in ncdims and 'z1' in ncdims and 'h' in ncvars and 'zeta' in ncvars: match = True
+        if 'z' in ncdims and ('z1' in ncdims or 'zi' in ncdims) and 'h' in ncvars and 'zeta' in ncvars: match = True
 
         # Test for GETM convention for general, hybrid or adaptive vertical coordinates.
         if 'level' in ncdims and 'bathymetry' in ncvars and ('h' in ncvars or 'hmean' in ncvars): match = True
@@ -1262,6 +1262,7 @@ class NetCDFStore_GOTM(NetCDFStore):
         self.hname,self.elevname = 'h','zeta'
         self.bathymetryname = None
         self.depthdim = None
+        self.depthinterfacedim = None
 
         # Link new depth coordinates to an existing NetCDF dimension
         self.depth2coord = {}
@@ -1269,10 +1270,10 @@ class NetCDFStore_GOTM(NetCDFStore):
         self.generatecartesiancenters = False
 
         NetCDFStore.__init__(self,path,*args,**kwargs)
-                
+
     def autoReassignCoordinates(self):
         NetCDFStore.autoReassignCoordinates(self)
-        
+
         # Get reference to NetCDF file and its variables and dimensions.
         nc = self.getcdf()
         ncvars,ncdims = self.getVariableNames_raw(),nc.dimensions
@@ -1310,7 +1311,7 @@ class NetCDFStore_GOTM(NetCDFStore):
         # --------------------------------------------------------------
         # Re-assign vertical dimension
         # NB the is done automatically for GOTM, because the original
-        # z and z1 variables are overwritten.
+        # z, zi, z1 variables are overwritten.
         # --------------------------------------------------------------
 
         if 'level' in ncdims and 'bathymetry' in ncvars and ('h' in ncvars or 'hmean' in ncvars):
@@ -1337,16 +1338,20 @@ class NetCDFStore_GOTM(NetCDFStore):
             # GETM or GOTM with z coordinates.
             # Depth dimension is called "z".
             self.depthdim = 'z'
+            self.depthinterfacedim = 'z1'
+            if 'zi' in ncdims:
+                self.depthinterfacedim = 'zi'
 
     def getVariableNames_raw(self):
         names = list(NetCDFStore.getVariableNames_raw(self))
 
         nc = self.getcdf()
         ncvars,ncdims = nc.variables,nc.dimensions
-        
+
         if self.depthdim is not None:
             if 'z' not in names: names.append('z')
-            if 'z1' in ncdims and 'z1' not in names: names.append('z1')
+            if self.depthinterfacedim is not None and self.depthinterfacedim not in names:
+                names.append(self.depthinterfacedim)
 
         self.generatecartesiancenters = self.generatecartesiancenters or ('xx' in ncvars and 'yx' in ncvars and 'xic' in ncdims and 'etac' in ncdims and 'xc' not in ncvars and 'yc' not in ncvars)
         if self.generatecartesiancenters: names += ['xc','yc']
@@ -1354,7 +1359,7 @@ class NetCDFStore_GOTM(NetCDFStore):
         return names
 
     def getVariable_raw(self,varname):
-            
+
         class CenterVariable(NetCDFStore.NetCDFVariable):
             def __init__(self,store,ncvarname):
                 NetCDFStore.NetCDFVariable.__init__(self,store,ncvarname)
@@ -1387,13 +1392,13 @@ class NetCDFStore_GOTM(NetCDFStore):
                 if bounds is None:
                     shape = self.getShape()
                     bounds = (slice(0,shape[0]),slice(0,shape[1]))
-                    
+
                 # Convert integer indices to slices so we always have 2 dimensions.
                 fullbounds = []
                 for b in bounds:
                     if isinstance(b,int): b = slice(b,b+1)
                     fullbounds.append(b)
-                
+
                 # Obtain all 4 corners
                 stagvar = self.store[self.stagname]
                 stagvals = stagvar.getSlice(fullbounds,dataonly=True).copy()
@@ -1404,17 +1409,17 @@ class NetCDFStore_GOTM(NetCDFStore):
                 stagvals += stagvar.getSlice(fullbounds,dataonly=True)
                 fullbounds[0] = oldbound0
                 stagvals += stagvar.getSlice(fullbounds,dataonly=True)
-                
+
                 # Average the corners to obtain center coordinates
                 centers = stagvals/4.
-                
+
                 # Eliminate singleton dimensiuons where integer indices were used.
                 if bounds is not None:
                     newshape = []
                     for l,b in zip(centers.shape,bounds):
                         if not isinstance(b,int): newshape.append(l)
                     centers.shape = newshape
-                    
+
                 # Return center coordinates.
                 return centers
 
@@ -1424,7 +1429,7 @@ class NetCDFStore_GOTM(NetCDFStore):
                 self.dimname = dimname
                 self.cacheddims = None
                 self.cachedshape = None
-        
+
             def getName_raw(self):
                 return self.dimname
 
@@ -1471,7 +1476,8 @@ class NetCDFStore_GOTM(NetCDFStore):
 
                     centercoord = self.dimname
                     if self.dimname.endswith('_stag'): centercoord = centercoord[:-5]
-                    if centercoord == 'z1': dim2length[self.store.depthdim] = self.store.getDimensionLength('z1')[0]
+                    if centercoord == self.store.depthinterfacedim:
+                        dim2length[self.store.depthdim] = self.store.getDimensionLength(self.store.depthinterfacedim)[0]
 
                     # Order dimensions
                     for v in nc.variables.values():
@@ -1493,18 +1499,18 @@ class NetCDFStore_GOTM(NetCDFStore):
 
                 # Re-assign dimensions if needed.
                 return self.cacheddims
-                
+
             def getShape(self):
                 if self.cachedshape is None:
                     self.getDimensions_raw()
                 return self.cachedshape
-                
+
             def getNcData(self,bounds=None,allowmask=True):
                 # Return values from cache if available.
                 if self.dimname in self.store.cachedcoords:
                     if bounds is None:
                         return self.store.cachedcoords[self.dimname]
-                    else:                        
+                    else:
                         return self.store.cachedcoords[self.dimname][bounds]
 
                 cachebasedata = bounds is not None
@@ -1548,7 +1554,7 @@ class NetCDFStore_GOTM(NetCDFStore):
                     assert len(vardims)==data.ndim,'%s: number of variable dimensions and array rank do not match.' % name
                     data.shape = [dimlengths.get(d,1) for d in dims]
                     return data
-                    
+
                 def takezrange(array,start,stop=None):
                     slc = [slice(None)]*array.ndim
                     if isinstance(start,slice):
@@ -1556,10 +1562,10 @@ class NetCDFStore_GOTM(NetCDFStore):
                     else:
                         slc[izdim] = slice(start,stop)
                     return array[slc]
-            
+
                 mask = numpy.ma.nomask
                 data = {}
-                            
+
                 # Subroutine for creating and updating the depth mask.
                 def setmask(mask,newmask):
                     if mask is numpy.ma.nomask:
@@ -1570,7 +1576,7 @@ class NetCDFStore_GOTM(NetCDFStore):
                         # Combine provided mask with existing one.
                         mask |= newmask
                     return mask
-                    
+
                 def getElevations(mask,bath=None):
                     # Get elevations
                     elev = getvardata(self.store.elevname)
@@ -1583,7 +1589,7 @@ class NetCDFStore_GOTM(NetCDFStore):
                         if numpy.any(elevmask):
                             # Add elevation mask to global depth mask (NB getvardata will have inserted z dimension already).
                             mask = setmask(mask,elevmask)
-                            
+
                             # Set masked (land) edges of domain to nearest (in x,y space) neighbouring elevation values.
                             # This is needed to allow the inference of corner points that fall outside the domain bounded by centre coordinates.
                             elev = xmlplot.common.interpolateEdges(elev)
@@ -1594,18 +1600,18 @@ class NetCDFStore_GOTM(NetCDFStore):
                                 bigbath = numpy.empty_like(elev)
                                 bigbath[...] = bath
                                 elev[elevmask] = -bigbath[elevmask]
-                            
+
                         # Eliminate elevation mask.
                         # If bathymetry is available, this will be used later to make masked elevations follow bathymetry.
                         # This will allow all layers in the masked domain to have height zero.
                         elev = elev.filled(0.)
-                        
+
                     return elev,mask
-                    
+
                 def getLayerHeights(mask):
                     # Get layer heights
                     h = getvardata(self.store.hname)
-                                        
+
                     # Fill masked values (we do not want coordinate arrays with masked values)
                     # This should not have any effect, as the value arrays should also be masked at
                     # these locations.
@@ -1613,31 +1619,31 @@ class NetCDFStore_GOTM(NetCDFStore):
                     if hmask is not numpy.ma.nomask:
                         # Add layer height mask to global depth mask.
                         mask = setmask(mask,hmask)
-                        
+
                         # Set masked (land) edges of domain to nearest (in x,y space) neighbouring layer heights.
                         # This is needed to allow the inference of corner points that fall outside the domain bounded by centre coordinates.
                         ipaxes = [i for i in range(len(h.shape)) if i!=izdim]
                         h = xmlplot.common.interpolateEdges(h,dims=ipaxes)
-                        
+
                         # Fill remaining masked layer heights with zero.
                         h = h.filled(0.)
-                        
+
                     return h,mask
-                    
+
                 def getBathymetry(mask):
                     # Get bathymetry (distance between geoid/mean sea level and bottom)
                     bath = getvardata(self.store.bathymetryname)
-                    
+
                     # Check bathymetry mask.
                     bathmask = numpy.ma.getmask(bath)
                     if bathmask is not numpy.ma.nomask:
                         # Add bathymetry mask to global depth mask.
                         mask = setmask(mask,bathmask)
-                        
+
                         # Set masked (land) edges of domain to nearest (in x,y space) neighbouring bahtymetry values.
                         # This is needed to allow the inference of corner points that fall outside the domain bounded by centre coordinates.
                         bath = xmlplot.common.interpolateEdges(bath)
-                        
+
                         # Fill the remaining masked bathymetry with the shallowest value in the domain.
                         if self.store.elevname is not None:
                             elev = getvardata(self.store.elevname)
@@ -1667,43 +1673,43 @@ class NetCDFStore_GOTM(NetCDFStore):
                     # Get depths of layer centers
                     z = takezrange(z_stag,1)-0.5*h
 
-                    z_len, z1_len = self.store.getDimensionLength('z')[0], self.store.getDimensionLength('z1')[0]
-                    assert z_len == z1_len or z_len+1 == z1_len, 'z1 dimension must be equal in length to z dimension, or be one longer (z1: %i, z: %i).' % (z1_len, z_len)
-                    if z_len == z1_len:
+                    z_len, zi_len = self.store.getDimensionLength('z')[0], self.store.getDimensionLength(self.store.depthinterfacedim)[0]
+                    assert z_len == zi_len or z_len+1 == zi_len, '%s dimension must be equal in length to z dimension, or be one longer (%s: %i, z: %i).' % (self.store.depthinterfacedim, self.store.depthinterfacedim, zi_len, z_len)
+                    if z_len == zi_len:
                         # Interface variables exclude the bottom interface
-                        z1 = takezrange(z_stag,1)
+                        zi = takezrange(z_stag, 1)
                     else:
                         # Interface variables include the bottom interface
-                        z1 = z_stag
+                        zi = z_stag
 
                     # Store depth coordinates
                     data['z']  = z
-                    data['z1'] = z1
+                    data[self.store.depthinterfacedim] = zi
 
-                    if bounds is None or self.dimname in ('z_stag','z1_stag'):
+                    if bounds is None or self.dimname in ('z_stag', '%s_stag' % self.store.depthinterfacedim):
                         # Use the actual top and bottom of the column as boundary interfaces for the
                         # grid of the interface coordinate.
-                        if z_len == z1_len:
+                        if z_len == zi_len:
                             # Interface variables exclude the bottom interface
-                            z1_stag = numpy.concatenate((numpy.take(z_stag,(0,),axis=izdim),takezrange(z,1),numpy.take(z_stag,(-1,),axis=izdim)),axis=izdim)
+                            zi_stag = numpy.concatenate((numpy.take(z_stag,(0,),axis=izdim),takezrange(z,1),numpy.take(z_stag,(-1,),axis=izdim)),axis=izdim)
                         else:
                             # Interface variables include the bottom interface
-                            z1_stag = numpy.concatenate((numpy.take(z_stag,(0,),axis=izdim),z,numpy.take(z_stag,(-1,),axis=izdim)),axis=izdim)
+                            zi_stag = numpy.concatenate((numpy.take(z_stag,(0,),axis=izdim),z,numpy.take(z_stag,(-1,),axis=izdim)),axis=izdim)
 
                         # Use normal staggering for the time, longitude and latitude dimension.
                         remdims = [i for i in range(z_stag.ndim) if i!=izdim]
                         data['z_stag']  = xmlplot.common.stagger(z_stag, remdims,defaultdeltafunction=self.store.getDefaultCoordinateDelta,dimnames=self.getDimensions_raw())
-                        data['z1_stag'] = xmlplot.common.stagger(z1_stag,remdims,defaultdeltafunction=self.store.getDefaultCoordinateDelta,dimnames=self.getDimensions_raw())
+                        data['%s_stag' % self.store.depthinterfacedim] = xmlplot.common.stagger(zi_stag,remdims,defaultdeltafunction=self.store.getDefaultCoordinateDelta,dimnames=self.getDimensions_raw())
 
                 elif self.store.hname is not None:
                     # GETM (no sigma coordinates): reconstruct from bathymetry and layer heights
-                
+
                     # Get bathymetry
                     bath,mask = getBathymetry(mask)
 
                     # Get layer heights.
                     h,mask = getLayerHeights(mask)
-                    
+
                     # Calculate depth of layer interfaces
                     z_stag = numpy.concatenate((numpy.zeros_like(h.take((0,),axis=izdim)),h.cumsum(axis=izdim)),axis=izdim)
                     z_stag -= bath
@@ -1729,10 +1735,10 @@ class NetCDFStore_GOTM(NetCDFStore):
                     # Clip it at zero: nearest neighbor interpolation of elevations may have
                     # caused water levels below the bottom.
                     depth = numpy.maximum(bath+elev,0.)
-                    
+
                     # Get sigma levels (constant across time and space)
                     sigma = getvardata('sigma')
-                    
+
                     # From sigma levels and water depth, calculate the z coordinates.
                     data['z'] = sigma*depth + elev
                     if bounds is None or self.dimname=='z_stag':
@@ -1746,7 +1752,7 @@ class NetCDFStore_GOTM(NetCDFStore):
 
                         # First stagger in deth dimension.
                         z_stag = sigma_stag*depth + elev
-                        
+
                         # Use default staggering for remaining dimensions of staggered z.
                         remdims = [i for i in range(z_stag.ndim) if i!=izdim]
                         data['z_stag'] = xmlplot.common.stagger(z_stag,dimindices=remdims,defaultdeltafunction=self.store.getDefaultCoordinateDelta,dimnames=self.getDimensions_raw())
@@ -1760,15 +1766,15 @@ class NetCDFStore_GOTM(NetCDFStore):
                 if bounds is None:
                     self.store.cachedcoords.update(data)
                     return data[self.dimname]
-                
+
                 # Retrieve the desired coordinates.
                 res = data[self.dimname]
-                
+
                 # Now finally take the depth range that we need
                 depthslice = bounds[izdim]
                 if isinstance(depthslice,int): depthslice = slice(depthslice,depthslice+1)
                 res = takezrange(res,depthslice)
-                
+
                 # Undo the staggering for the dimension that we take a single slice through.
                 if self.dimname.endswith('_stag'):
                     # This is a staggered variable - average left and right bounds for indexed dimensions.
@@ -1782,7 +1788,7 @@ class NetCDFStore_GOTM(NetCDFStore):
 
         if self.generatecartesiancenters and varname in ('xc','yc'):
             return CenterVariable(self,varname)
-        elif varname in ('z','z1','z_stag','z1_stag'):
+        elif varname in ('z', self.depthinterfacedim, 'z_stag', '%s_stag' % self.depthinterfacedim):
             return DepthVariable(self,varname,varname)
         return NetCDFStore.getVariable_raw(self,varname)
 
@@ -1795,10 +1801,10 @@ class NetCDFStore_GOTM(NetCDFStore):
             timeunit,timeref = self.getTimeReference(dimname)
         except ReferenceTimeParseError:
             return NetCDFStore.getDefaultCoordinateDelta(self,dimname,coords)
-            
+
         # Take delta as the difference between the reference time and the first time step
         if coords[0]>timeref: return coords[0]-timeref
-        
+
         return 1.
 
 class NetCDFStore_MOM4(NetCDFStore):
@@ -1815,7 +1821,7 @@ class NetCDFStore_MOM4(NetCDFStore):
 
     def autoReassignCoordinates(self):
         NetCDFStore.autoReassignCoordinates(self)
-        
+
         # Re-assign x,y coordinate dimensions to longitude, latitude
         nc = self.getcdf()
         ncvars,ncdims = nc.variables,nc.dimensions
