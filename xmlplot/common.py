@@ -687,7 +687,7 @@ class VariableStore(UserDict.DictMixin):
         """
         return dict(defaultdimensioninfo)
 
-    def getVariableTree(self,otherstores={},plottableonly=True):
+    def getVariableTree(self, otherstores={}, plottableonly=True):
         """Returns a tree representation of the variables in the data store,
         represented by an xmlstore.TypedStore object that uses the short names
         of variables as node names.
@@ -718,7 +718,6 @@ class VariableStore(UserDict.DictMixin):
                 label = path.replace('_', ' ')
             node.setAttribute('name', path)
             node.setAttribute('label', label)
-            node.setAttribute('type', 'bool')
             parent.appendChild(node)
             return node
 
@@ -736,10 +735,11 @@ class VariableStore(UserDict.DictMixin):
         for varname in names:
             variable = self.getVariable(varname)
             parent = root
-            for component in variable.getProperties().get('path', 'Other').split('/'):
+            for component in variable.getProperties().get('path', 'other').split('/'):
                 if component != '':
                     parent = addNode(parent, component)
-            addNode(parent, varname, label=vardict.get(varname, varname))
+            node = addNode(parent, varname, label=vardict.get(varname, varname))
+            node.setAttribute('type', 'bool')
         return xmlstore.xmlstore.TypedStore(xmlschema, otherstores=otherstores)
 
     def getVariable_raw(self,varname):
