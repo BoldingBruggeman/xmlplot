@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='xmlplot',
-      version='0.1',
+      version='0.1.2',
       description=' --- update - ',
       long_description=readme(),
       url='http://github.com/BoldingBruggeman/xmlplot',
@@ -13,11 +13,11 @@ setup(name='xmlplot',
       author_email='jorn@bolding-bruggeman.com',
       license='GPL',
       classifiers=[
-          'Development Status :: 3 - Alpha',
+          'Development Status :: 5 - Production/Stable',
           'Intended Audience :: Developers',
-          'Topic :: Numerical Models :: Configuration Tools',
-          'License :: OSI Approved :: GPL License',
-          'Programming Language :: Python :: 2.7',
+          'Topic :: Software Development :: Libraries :: Python Modules',
+          'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
+          'Programming Language :: Python :: 2 :: Only',
       ],
 #      entry_points={
 #          'console_scripts': [
@@ -28,4 +28,5 @@ setup(name='xmlplot',
       packages=['xmlplot', 'xmlplot/data'],
       package_data={'xmlplot': ['icons/*', 'schemas/*/*']}, 
       include_package_data=True,
+      install_requires=['xmlstore', 'numpy', 'matplotlib'],
       zip_safe=False)
