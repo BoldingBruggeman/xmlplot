@@ -612,6 +612,7 @@ class VariableStore(UserDict.DictMixin):
         supported by NumPy.
         """
         # Create the namespace that must be used when then expression is evaluated.
+        import keyword
         import expressions
         namespace = expressions.ExpressionNamespace(expressions.LazyStore(self))
         if defaultchild is not None:
@@ -619,6 +620,7 @@ class VariableStore(UserDict.DictMixin):
             defaultsource = self.children[defaultchild]
             assert isinstance(defaultsource,VariableStore), 'Default variable source must be of type VariableStore.'
             for varname in defaultsource.getVariableNames():
+                if keyword.iskeyword(varname): continue
                 var = defaultsource.getVariable(varname)
                 lazyvar = expressions.LazyVariable(var)
                 lazyvar.name = '%s[\'%s\']' % (defaultchild,varname)
