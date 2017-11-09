@@ -1,2 +1,5 @@
 *.pyc
 *.whl
+/build
+/dist
+/xmlplot.egg-info
