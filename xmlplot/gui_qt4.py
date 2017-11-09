@@ -316,12 +316,7 @@ class FigureToolbar(matplotlib.backend_bases.NavigationToolbar2):
         """Called by the base implementation to change the mouse cursor.
         The code has been taken from NavigationToolbar2QT.
         """
-        cursord = {
-            matplotlib.backend_bases.cursors.MOVE          : QtCore.Qt.PointingHandCursor,
-            matplotlib.backend_bases.cursors.HAND          : QtCore.Qt.WaitCursor,
-            matplotlib.backend_bases.cursors.POINTER       : QtCore.Qt.ArrowCursor,
-            matplotlib.backend_bases.cursors.SELECT_REGION : QtCore.Qt.CrossCursor,
-            }
+        from matplotlib.backends.backend_qt4 import cursord
         self.canvas.setCursor(QtGui.QCursor(cursord[cursor]))
                 
     def draw_rubberband( self, event, x0, y0, x1, y1 ):
