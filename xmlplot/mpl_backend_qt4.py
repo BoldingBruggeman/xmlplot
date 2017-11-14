@@ -1,7 +1,7 @@
 from matplotlib.backend_bases import FigureCanvasBase, TimerBase
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
-from xmlstore.qt_compat import QtGui,QtCore
+from xmlstore.qt_compat import QtGui,QtCore,QtWidgets
 
 DEBUG = False
 
@@ -46,7 +46,7 @@ class TimerQT(TimerBase):
         self._timer.stop()
 
 
-class FigureCanvasQT( QtGui.QWidget, FigureCanvasBase ):
+class FigureCanvasQT(FigureCanvasBase, QtWidgets.QWidget):
     keyvald = { QtCore.Qt.Key_Control : 'control',
                 QtCore.Qt.Key_Shift : 'shift',
                 QtCore.Qt.Key_Alt : 'alt',
@@ -57,7 +57,7 @@ class FigureCanvasQT( QtGui.QWidget, FigureCanvasBase ):
     def __init__( self, figure ):
         if DEBUG: print 'FigureCanvasQt: ', figure
 
-        QtGui.QWidget.__init__( self )
+        QtWidgets.QWidget.__init__( self )
         FigureCanvasBase.__init__( self, figure )
         self.figure = figure
         self.setMouseTracking( True )
@@ -67,8 +67,7 @@ class FigureCanvasQT( QtGui.QWidget, FigureCanvasBase ):
         w,h = self.get_width_height()
         self.resize( w, h )
 
-        QtCore.QObject.connect(self, QtCore.SIGNAL('destroyed()'),
-            self.close_event)
+        self.destroyed.connect(self.close_event)
 
     def __timerEvent(self, event):
         # hide until we can test and fix
@@ -78,7 +77,7 @@ class FigureCanvasQT( QtGui.QWidget, FigureCanvasBase ):
         FigureCanvasBase.enter_notify_event(self, event)
 
     def leaveEvent(self, event):
-        QtGui.QApplication.restoreOverrideCursor()
+        QtWidgets.QApplication.restoreOverrideCursor()
         FigureCanvasBase.leave_notify_event(self, event)
 
     def mousePressEvent( self, event ):
@@ -139,7 +138,7 @@ class FigureCanvasQT( QtGui.QWidget, FigureCanvasBase ):
         self.figure.set_size_inches( winch, hinch )
         self.draw()
         self.update()
-        QtGui.QWidget.resizeEvent(self, event)
+        QtWidgets.QWidget.resizeEvent(self, event)
 
     def sizeHint( self ):
         w, h = self.get_width_height()
@@ -177,7 +176,7 @@ class FigureCanvasQT( QtGui.QWidget, FigureCanvasBase ):
         return TimerQT(*args, **kwargs)
 
     def flush_events(self):
-        QtGui.qApp.processEvents()
+        QtWidgets.qApp.processEvents()
 
     def start_event_loop(self,timeout):
         FigureCanvasBase.start_event_loop_default(self,timeout)

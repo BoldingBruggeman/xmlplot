@@ -1,10 +1,10 @@
 import sys
-from xmlstore.qt_compat import QtCore,QtGui
+from xmlstore.qt_compat import QtCore,QtGui,QtWidgets
 
 class ErrorReceiver(QtCore.QObject):
     """Objects of this class accept an ErrorEvent (contained), takes the contained error message
     and passes it to ErrorDialog for showing the error in the GUI. Errors can be posted from
-    any thread (not necessarily the GUI thread) using QtGui.QApplication.postEvent.
+    any thread (not necessarily the GUI thread) using QtWidgets.QApplication.postEvent.
     """
     def __init__(self):
         QtCore.QObject.__init__(self)
@@ -24,7 +24,7 @@ class ErrorReceiver(QtCore.QObject):
         if ev.type()==QtCore.QEvent.User:
             ErrorDialog.postError(ev.error)
             return True
-        return QtGui.QWidget.event(self,ev)
+        return QtWidgets.QWidget.event(self,ev)
         
 # The one and only errorreceiver object, responsible for receiving posted errors from all threads.
 # Posted errors will be passed to an ErrorDialog.
@@ -41,7 +41,7 @@ def redirect_stderr(appname,errortext):
         """
         softspace = 0   # Must be provided by file-like objects
         def write(self, text):
-            QtGui.QApplication.postEvent(errorreceiver,ErrorReceiver.ErrorEvent(text))
+            QtWidgets.QApplication.postEvent(errorreceiver,ErrorReceiver.ErrorEvent(text))
         def flush(self):
             pass
 
@@ -50,7 +50,7 @@ def redirect_stderr(appname,errortext):
             
     sys.stderr = Stderr()
 
-class ErrorDialog(QtGui.QWidget):
+class ErrorDialog(QtWidgets.QWidget):
     errdlg = None
     errortext = None
     appname = None
@@ -66,19 +66,19 @@ class ErrorDialog(QtGui.QWidget):
         ErrorDialog.errdlg.show()
     
     def __init__(self,parent=None):
-        if parent is None: parent = QtGui.QApplication.activeWindow()
-        QtGui.QWidget.__init__(self,parent,QtCore.Qt.Tool)
+        if parent is None: parent = QtWidgets.QApplication.activeWindow()
+        QtWidgets.QWidget.__init__(self,parent,QtCore.Qt.Tool)
 
-        self.labelStart = QtGui.QLabel('Errors occurred during execution of %s:' % ErrorDialog.appname,self)
+        self.labelStart = QtWidgets.QLabel('Errors occurred during execution of %s:' % ErrorDialog.appname,self)
         self.labelStart.setWordWrap(True)
-        self.labelStop = QtGui.QLabel(ErrorDialog.errortext,self)
+        self.labelStop = QtWidgets.QLabel(ErrorDialog.errortext,self)
         self.labelStop.setOpenExternalLinks(True)
         self.labelStop.setWordWrap(True)
 
-        self.textedit = QtGui.QTextEdit(self)
-        self.textedit.setLineWrapMode(QtGui.QTextEdit.NoWrap)
+        self.textedit = QtWidgets.QTextEdit(self)
+        self.textedit.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
         self.textedit.setReadOnly(True)
-        layout = QtGui.QVBoxLayout()
+        layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.labelStart)
         layout.addWidget(self.textedit)
         layout.addWidget(self.labelStop)
