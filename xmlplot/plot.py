@@ -1221,7 +1221,12 @@ class Figure(xmlstore.util.referencedobject):
         padBottom = nodePadding['Bottom'].getValue(usedefault=True)
         figure.subplots_adjust(left=padLeft,right=1.-padRight,top=1.-padTop,bottom=padBottom)
         axes = figure.add_subplot(111,projection=projection)
-        axes.set_facecolor(bg.getNormalized())
+        if hasattr(axis, 'set_facecolor'):
+            # MatPlotLib >= 2
+            axes.set_facecolor(bg.getNormalized())
+        else:
+            # MatPlotLib < 2
+            axes.set_axis_bgcolor(bg.getNormalized())
 
         # Handle transformations due to map projection (if any)
         xcanbelon = projection=='rectilinear' and xrange[0] is not None and xrange[0]>=-361 and xrange[1]<=361
