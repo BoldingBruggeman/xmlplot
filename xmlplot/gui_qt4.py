@@ -1273,8 +1273,9 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
             self.datastore.dataChanged()
             
         def reset(self):
+            self.beginResetModel()
             self.loadData()
-            QtCore.QAbstractItemModel.reset(self)
+            self.endResetModel()
             
         def index(self,irow,icolumn,parent=None):
             if parent is None: parent=QtCore.QModelIndex()
