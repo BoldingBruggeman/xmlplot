@@ -1221,7 +1221,7 @@ class Figure(xmlstore.util.referencedobject):
         padBottom = nodePadding['Bottom'].getValue(usedefault=True)
         figure.subplots_adjust(left=padLeft,right=1.-padRight,top=1.-padTop,bottom=padBottom)
         axes = figure.add_subplot(111,projection=projection)
-        if hasattr(axis, 'set_facecolor'):
+        if hasattr(axes, 'set_facecolor'):
             # MatPlotLib >= 2
             axes.set_facecolor(bg.getNormalized())
         else:

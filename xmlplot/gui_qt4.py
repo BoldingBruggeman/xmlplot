@@ -994,7 +994,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
 
         self.first = True
         
-        self.progressdialog = QtGui.QProgressDialog('',None,0,0,self,QtCore.Qt.Dialog|QtCore.Qt.CustomizeWindowHint|QtCore.Qt.WindowTitleHint)
+        self.progressdialog = QtWidgets.QProgressDialog('',None,0,0,self,QtCore.Qt.Dialog|QtCore.Qt.CustomizeWindowHint|QtCore.Qt.WindowTitleHint)
         self.progressdialog.setModal(True)
         self.progressdialog.setMinimumDuration(0)
         self.progressdialog.setAutoReset(False)
