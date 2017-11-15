@@ -924,7 +924,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
         def createPanel():
             widget = QtWidgets.QWidget(self)
             panel = FigurePanel(widget)
-            tw = QtGui.QTabWidget(widget)
+            tw = QtWidgets.QTabWidget(widget)
             de = FunctionVariableEditor(tw)
             tw.addTab(de,'Provide data')
             
@@ -948,7 +948,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
             panel,widget = createPanel()
             loRight.addWidget(widget)
         else:
-            self.tabs = QtGui.QTabWidget(self)
+            self.tabs = QtWidgets.QTabWidget(self)
             for name in self.linkedfile.getVariableNames():
                 panel,widget = createPanel()
                 self.tabs.addTab(widget,namedict[name])
