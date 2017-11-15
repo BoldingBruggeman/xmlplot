@@ -1094,7 +1094,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
             finally:
                 self.progressdialog.reset()
         except Exception,e:
-            QtGui.QMessageBox.critical(self, 'Invalid data file', str(e), QtGui.QMessageBox.Ok, QtGui.QMessageBox.NoButton)
+            QtWidgets.QMessageBox.critical(self, 'Invalid data file', str(e), QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
             if datafile is None:
                 # No backup file available (this is the initialization call with the original data file)
                 # Create a new empty data file by copying only the metadata from the original file.

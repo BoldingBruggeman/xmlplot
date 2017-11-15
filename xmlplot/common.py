@@ -39,7 +39,7 @@ def getVersions():
 
     try:
         from xmlstore.qt_compat import QtCore,qt4_backend,qt4_backend_version
-        yield ('Qt4',QtCore.qVersion())
+        yield ('Qt',QtCore.qVersion())
         yield (qt4_backend,qt4_backend_version)
     except ImportError:
         pass
