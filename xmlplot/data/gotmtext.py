@@ -85,7 +85,7 @@ class LinkedFileVariableStore(xmlplot.common.VariableStore,xmlstore.datatypes.Da
             self.dimensions[dimname].update(dimdata)
         self.vardata = list(variables)
         self.dimensionorder = list(dimensionorder)
-        
+
         # Supplement dimensions and variables with information in
         # supplied XML node (if any)
         self.filename = defaultfilename
@@ -348,14 +348,14 @@ class LinkedMatrix(LinkedFileVariableStore):
     def parseDataFile(self,callback=None):
         if self.datafile is None or not self.datafile.isValid(): return None
 
-        if self.type==0:
-            # Unknown number of rows
-            res = self.loadDataFile_UnknownCount(callback)
-        elif self.type==1:
-            # Known number of rows
-            res = self.loadDataFile_KnownCount(callback)
-        else:
-            assert False, 'unknown LinkedMatrix type %i.' % self.type
+            if self.type==0:
+                # Unknown number of rows
+                res = self.loadDataFile_UnknownCount(callback)
+            elif self.type==1:
+                # Known number of rows
+                res = self.loadDataFile_KnownCount(callback)
+            else:
+                assert False, 'unknown LinkedMatrix type %i.' % self.type
 
         return res
         
@@ -400,7 +400,7 @@ class LinkedMatrix(LinkedFileVariableStore):
                 if dimisdate:
                     # Read the date + time
                     try:
-                        refvals = map(int,(line[:4],line[5:7],line[8:10],line[11:13],line[14:16],line[17:19]))
+                        refvals = tuple(map(int,(line[:4],line[5:7],line[8:10],line[11:13],line[14:16],line[17:19])))
                     except ValueError:
                         raise Exception('Line %i does not start with date and time (yyyy-mm-dd hh:mm:ss). Line contents: %s' % (iline,line))
                     dimvalue = xmlstore.util.dateTimeFromTuple(refvals)
@@ -413,10 +413,10 @@ class LinkedMatrix(LinkedFileVariableStore):
                     data = line[19:].split()
                 else:
                     # Split line, convert values to floats and store first as coordinate.
-                    data = map(float,line.split())
+                    data = list(map(float,line.split()))
                     dimvalue = data.pop(0)
             else:
-                data = map(float,line.split())
+                data = tuple(map(float,line.split()))
 
             if len(data)<varcount:
                 raise Exception('Line %i contains only %i observations, where %i are expected (%s).' % (iline,len(data),varcount,', '.join([d[1] for d in self.vardata])))
@@ -460,7 +460,7 @@ class LinkedMatrix(LinkedFileVariableStore):
         dimdatatype = self.dimensions[self.dimensionorder[0]]['datatype']
         
         # Size of one memory slab (roughly equivalent to 1 MB in memory)
-        buffersize = 125000/(varcount+1)
+        buffersize = 125000//(varcount+1)
 
         times = []
         values = []
@@ -484,7 +484,7 @@ class LinkedMatrix(LinkedFileVariableStore):
 
             # Read the date + time
             try:
-                refvals = map(int,(line[:4],line[5:7],line[8:10],line[11:13],line[14:16],line[17:19]))
+                refvals = tuple(map(int,(line[:4],line[5:7],line[8:10],line[11:13],line[14:16],line[17:19])))
             except ValueError:
                 raise Exception('Line %i does not start with date and time (yyyy-mm-dd hh:mm:ss). Line contents: %s' % (iline,line))
             curdate = xmlstore.util.dateTimeFromTuple(refvals)
@@ -494,7 +494,7 @@ class LinkedMatrix(LinkedFileVariableStore):
             data = line[19:].split()
             if len(data)<varcount:
                 raise Exception('Line %i contains only %i observations, where %i are expected (%s).' % (iline,len(data),varcount,', '.join([d[1] for d in self.vardata])))
-            values[-1][ipos,:] = map(float,data[:varcount])
+            values[-1][ipos,:] = tuple(map(float,data[:varcount]))
 
             # Increment index in current memory slab
             ipos = (ipos+1) % buffersize
@@ -710,7 +710,7 @@ class LinkedProfilesInTime(LinkedFileVariableStore):
 
             # Read date & time
             try:
-                refvals = map(int,(line[:4],line[5:7],line[8:10],line[11:13],line[14:16],line[17:19]))
+                refvals = tuple(map(int,(line[:4],line[5:7],line[8:10],line[11:13],line[14:16],line[17:19])))
             except ValueError:
                 raise Exception('Line %i does not start with date and time (yyyy-mm-dd hh:mm:ss). Line contents: %s' % (iline,line))
             curdate = xmlstore.util.dateTimeFromTuple(refvals)
@@ -747,7 +747,7 @@ class LinkedProfilesInTime(LinkedFileVariableStore):
 
                 # Read values (depth followed by data) and check.
                 try:
-                    linedata = map(float,line.split())
+                    linedata = tuple(map(float,line.split()))
                 except ValueError as e:
                     raise Exception('Line %i: %s' % (iline,e))
                     
