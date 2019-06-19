@@ -1,3 +1,4 @@
+from __future__ import print_function
 import common,expressions
 import datetime
 oridatetime = datetime
@@ -26,7 +27,7 @@ class statistics(expressions.LazyFunction):
         percentilewidth = resolvedkwargs['percentilewidth']
         output = resolvedkwargs['output']
     
-        if isinstance(axis,basestring):
+        if isinstance(axis, (str, u''.__class__)):
             dims = sourceslice.dimensions
             assert axis in dims,'Specified axis "%s" does not exist. Available: %s.' % (axis,', '.join(dims))
             axis = list(dims).index(axis)
@@ -133,10 +134,10 @@ class flatten(expressions.LazyFunction):
         targetaxis = resolvedkwargs['targetaxis']
             
         dims = list(sourceslice.dimensions)
-        if isinstance(axis,basestring):
+        if isinstance(axis, (str, u''.__class__)):
             assert axis in dims,'Specified axis "%s" does not exist. Available: %s.' % (axis,', '.join(dims))
             axis = dims.index(axis)
-        if isinstance(targetaxis,basestring):
+        if isinstance(targetaxis, (str, u''.__class__)):
             assert targetaxis in dims,'Specified axis "%s" does not exist. Available: %s.' % (targetaxis,', '.join(dims))
             targetaxis = dims.index(targetaxis)
 
@@ -200,7 +201,7 @@ class interp(expressions.LazyFunction):
     def __init__(self,sourceslice,**kwargs):
         expressions.LazyFunction.__init__(self,self.__class__.__name__,None,sourceslice,outsourceslices=False,**kwargs)
         dims = expressions.LazyFunction.getDimensions(self)
-        for d in kwargs.iterkeys():
+        for d in kwargs.keys():
             assert d in dims, 'Dimension %s does not exist in original slice. Available dimensions: %s' % (d,', '.join(dims))
         self.usefirstunit = True
         
@@ -271,7 +272,7 @@ class iter(expressions.LazyFunction):
         i = start
         while i<stop:
             ihigh = min(i+self.stride*step,stop)
-            print 'Reading %s range %i-%i...' % (self.dimension,i,ihigh-1)
+            print('Reading %s range %i-%i...' % (self.dimension,i,ihigh-1))
             if inewdim is None:
                 extraslices[self.dimension] = i
             else:
@@ -359,7 +360,7 @@ class var(expressions.LazyFunction):
         if extraslices is not None:
             # Filter out slices for dimensions that we do not support.
             dims = self.getDimensions()
-            extraslices = dict([(k,v) for k,v in extraslices.iteritems() if k in dims])
+            extraslices = dict([(k,v) for k,v in extraslices.items() if k in dims])
         data = expressions.LazyExpression.argument2value(self.args[0],extraslices,dataonly=True)
         if dataonly: return data
         coords = expressions.LazyExpression.argument2value(self.kwargs['coords'],extraslices,dataonly=True)
@@ -381,7 +382,7 @@ class addgaps(expressions.LazyFunction):
         if axis is None:
             # Default to first axis
             axis = 0
-        elif isinstance(axis,basestring):
+        elif isinstance(axis, (str, u''.__class__)):
             # Axis is provided as string; find the index of that axis.
             dims = list(src.dimensions)
             assert axis in dims,'Specified axis "%s" does not exist. Available: %s.' % (axis,', '.join(dims))

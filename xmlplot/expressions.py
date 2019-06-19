@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import UserDict,types
 import numpy
 import common
@@ -249,7 +251,7 @@ class LazyExpression(object):
             if slic:
                 # Separate sliced dimensions in those that can be processed by the argument,
                 # and those that should be applied afterwards.
-                slic = dict([(k,v) for k,v in slic.iteritems() if k in dims])
+                slic = dict([(k,v) for k,v in slic.items() if k in dims])
                 for idim in range(len(dims)-1,-1,-1):
                     dim = dims[idim]
                     if dim in slic and arg.canProcessSlice(dim):
@@ -283,7 +285,7 @@ class LazyExpression(object):
     def argument2text(arg,type=0):
         if isinstance(arg,LazyExpression):
             return arg.getText(type)
-        elif isinstance(arg,basestring):
+        elif isinstance(arg, (str, u''.__class__)):
             return '\'%s\'' % arg
         elif isinstance(arg,(tuple,list)):
             subargs = [LazyExpression.argument2text(subarg,type) for subarg in arg]
@@ -311,30 +313,30 @@ class LazyExpression(object):
         return self.canprocessslice
         
     def debugPrint(self,indent=''):
-        print indent+'%s, dims=(%s), shape=%s' % (str(self),','.join(self.getDimensions()),str(self.getShape()))
+        print(indent+'%s, dims=(%s), shape=%s' % (str(self),','.join(self.getDimensions()),str(self.getShape())))
         indent = ' '*len(indent)
         for arg in self.args:
             if isinstance(arg,LazyExpression):
                 arg.debugPrint(indent+'  ')
             else:
-                print indent+'  '+str(arg)
-        for name,arg in self.kwargs.iteritems():
+                print(indent+'  '+str(arg))
+        for name,arg in self.kwargs.items():
             if isinstance(arg,LazyExpression):
                 arg.debugPrint(indent+'  '+name+'=')
             else:
-                print indent+'  '+name+'='+str(arg)
+                print(indent+'  '+name+'='+str(arg))
 
     def getVariables(self):
         vars = []
         for arg in self.args:
             if isinstance(arg,LazyExpression): vars += arg.getVariables()
-        for arg in self.kwargs.itervalues():
+        for arg in self.kwargs.values():
             if isinstance(arg,LazyExpression): vars += arg.getVariables()
         return vars
         
     def getText(self,type=0,addparentheses=True):
         resolvedargs = [LazyExpression.argument2text(arg,type) for arg in self.args]
-        resolvedkwargs = dict([(name,LazyExpression.argument2text(arg,type)) for name,arg in self.kwargs.iteritems()])
+        resolvedkwargs = dict([(name,LazyExpression.argument2text(arg,type)) for name,arg in self.kwargs.items()])
         if type==3:
             if self.usefirstunit:
                 return resolvedargs[0]
@@ -353,9 +355,9 @@ class LazyExpression(object):
         if extraslices is not None:
             # Filter out slices for dimensions that we do not support.
             dims = self.getDimensions()
-            extraslices = dict([(k,v) for k,v in extraslices.iteritems() if k in dims])
+            extraslices = dict([(k,v) for k,v in extraslices.items() if k in dims])
         resolvedargs = [LazyExpression.argument2value(arg,extraslices,dataonly=(dataonly and not self.useslices)) for arg in self.args]
-        resolvedkwargs = dict([(name,LazyExpression.argument2value(arg,extraslices,dataonly=(dataonly and not self.useslices))) for name,arg in self.kwargs.iteritems()])
+        resolvedkwargs = dict([(name,LazyExpression.argument2value(arg,extraslices,dataonly=(dataonly and not self.useslices))) for name,arg in self.kwargs.items()])
         return self._getValue(resolvedargs,resolvedkwargs,dataonly=dataonly)
 
     def _getValue(self,args,kwargs):
@@ -626,7 +628,7 @@ class LazyFunction(LazyOperation):
         
         self.outsourceslices = False
             
-        if isinstance(self.removedim,basestring):
+        if isinstance(self.removedim, (str, u''.__class__)):
             dims = LazyOperation.getDimensions(self)
             assert self.removedim in dims,'"%s" is not an existing dimension. Available: %s.' % (self.removedim,', '.join(dims))
             self.removedim = list(dims).index(self.removedim)
@@ -674,7 +676,8 @@ class LazyFunction(LazyOperation):
 
     def _getText(self,resolvedargs,resolvedkwargs,type=0,addparentheses=False):
         strargs = list(resolvedargs)
-        for k,v in resolvedkwargs.iteritems(): strargs.append('='.join((k,v)))
+        for k,v in resolvedkwargs.items():
+            strargs.append('='.join((k,v)))
         return '%s(%s)' % (self.name,','.join(strargs))
 
 class LazyOperator(LazyOperation):

@@ -1,4 +1,4 @@
-import os, StringIO
+import os, io
 
 import numpy
 
@@ -80,7 +80,7 @@ class LinkedFileVariableStore(xmlplot.common.VariableStore,xmlstore.datatypes.Da
 
         # Copy data from supplied dimensions and variables
         self.dimensions = {}
-        for dimname,dimdata in dimensions.iteritems():
+        for dimname,dimdata in dimensions.items():
             self.dimensions[dimname] = xmlplot.common.VariableStore.getDimensionInfo_raw(self,None)
             self.dimensions[dimname].update(dimdata)
         self.vardata = list(variables)
@@ -162,7 +162,7 @@ class LinkedFileVariableStore(xmlplot.common.VariableStore,xmlstore.datatypes.Da
         if clearfile: self.setDataFile(None,cleardata=False)
         if self.data is None: return
         
-        #print '%s - caching validation result and dimension boundaries.' % self.filename
+        #print('%s - caching validation result and dimension boundaries.' % self.filename)
         metadata = self.getMetaData()
         for dimname in self.getDimensionNames():
             dimnode = metadata['Dimensions'].getChildById('Dimension',id=dimname,create=True)
@@ -203,14 +203,14 @@ class LinkedFileVariableStore(xmlplot.common.VariableStore,xmlstore.datatypes.Da
         if dimnode is None:
             try:
                 self.getData()
-            except Exception,e:
+            except Exception as e:
                 pass
             dimnode = metadata['Dimensions'].getChildById('Dimension',dimname)
             assert dimnode is not None, 'Cannot locate node for dimension %s in data file cache.' % dimname
             
         if metadata['Valid'].getValue()==False: return None
 
-        #print '%s - using cached bounds for %s.' % (self.filename,dimname)
+        #print('%s - using cached bounds for %s.' % (self.filename,dimname))
         if dimnode['IsTimeDimension'].getValue():
             minval = dimnode['MinimumTime'].getValue()
             maxval = dimnode['MaximumTime'].getValue()
@@ -230,11 +230,11 @@ class LinkedFileVariableStore(xmlplot.common.VariableStore,xmlstore.datatypes.Da
         if valid is None:
             try:
                 self.getData(callback=callback)
-            except Exception,e:
+            except Exception as e:
                 pass
             valid = metadata['Valid'].getValue()
             assert valid is not None, 'Information on validity of data file %s not in data file cache.' % self.filename
-        #print '%s - using cached validation result.' % self.filename
+        #print('%s - using cached validation result.' % self.filename)
         return valid
     
     def getVariableNames_raw(self):
@@ -274,7 +274,7 @@ class LinkedFileVariableStore(xmlplot.common.VariableStore,xmlstore.datatypes.Da
             assert self.data is not None, 'getDataFile called with both the data file and the data in memory are not set.'
         
             # Data not present as data file object. Create one in memory on the spot.
-            target = StringIO.StringIO()
+            target = io.StringIO()
             self.writeData(target,callback=callback)
             self.datafile = xmlstore.datatypes.DataFileMemory(target.getvalue(),self.filename+'.dat')
             target.close()
@@ -288,7 +288,7 @@ class LinkedFileVariableStore(xmlplot.common.VariableStore,xmlstore.datatypes.Da
         if self.data is None and self.datafile is not None:
             try:
                 data = self.parseDataFile(callback)
-            except Exception,e:
+            except Exception as e:
                 self.getMetaData()['Valid'].setValue(False)
                 raise
             self.setData(data,clearfile=False)
@@ -748,7 +748,7 @@ class LinkedProfilesInTime(LinkedFileVariableStore):
                 # Read values (depth followed by data) and check.
                 try:
                     linedata = map(float,line.split())
-                except ValueError,e:
+                except ValueError as e:
                     raise Exception('Line %i: %s' % (iline,e))
                     
                 if len(linedata)<varcount+1:

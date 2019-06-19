@@ -1,5 +1,11 @@
 # Import modules from standard Python library
-import os, sys, re, datetime, shutil, types, UserDict, glob
+import os, sys, re, datetime, shutil, types, glob
+try:
+    from collections import Mapping as DictMixin
+except ImportError:
+    from UserDict import DictMixin
+
+from builtins import int as longint
 
 # Import additional third party modules
 import numpy
@@ -10,14 +16,14 @@ import xmlplot.common, xmlstore.util
 def openNetCDF(path,mode='r'):
     # Test if the path contains wildcard, and resolves to multiple files.
     # If so, we will try to combine these files.
-    if isinstance(path,basestring):
+    if isinstance(path, (str, u''.__class__)):
         paths = glob.glob(path)
         if len(paths)==1:
             path = paths[0]
         elif len(paths)>1:
             path = paths
     
-    if isinstance(path,basestring):
+    if isinstance(path, (str, u''.__class__)):
         return getNetCDFFile(path,mode)
     else:
         assert mode=='r','A multi-file NetCDF dataset can only be opened for reading.'
@@ -49,7 +55,7 @@ def enumerateNetCDFModules():
     ready = True
     try:
         import netCDF4
-    except ImportError,e:
+    except ImportError as e:
         error += 'Cannot load netCDF4. Reason: %s.\n' % str(e)
         ready = False
     if ready:
@@ -63,7 +69,7 @@ def enumerateNetCDFModules():
     ready = True
     try:
         import Scientific.IO.NetCDF
-    except ImportError,e:
+    except ImportError as e:
         error += 'Cannot load Scientific.IO.NetCDF. Reason: %s.\n' % str(e)
         ready = False
     if ready:
@@ -79,14 +85,14 @@ def enumerateNetCDFModules():
     ready = True
     try:
         import pynetcdf
-    except ImportError,e:
+    except ImportError as e:
         error += 'Cannot load pynetcdf. Reason: %s.\n' % str(e)
         ready = False
     if ready:
         if selectednetcdfmodule==-1:
             pyver = sys.version_info
             if (pyver[0]==2 and pyver[1]>=5) or pyver[0]>2:
-                print 'pynetcdf will be used for NetCDF support. Note though that pynetcdf has known incompatibilities with Python 2.5 and higher, and you are using Python %i.%i.%i.' % (pyver[0],pyver[1],pyver[2])
+                print('pynetcdf will be used for NetCDF support. Note though that pynetcdf has known incompatibilities with Python 2.5 and higher, and you are using Python %i.%i.%i.' % (pyver[0],pyver[1],pyver[2]))
             selectednetcdfmodule = len(netcdfmodules)
         netcdfmodules.append(('pynetcdf',''))
 
@@ -94,7 +100,7 @@ def enumerateNetCDFModules():
     ready = True
     try:
         import pupynere
-    except ImportError,e:
+    except ImportError as e:
         error += 'Cannot load pupynere. Reason: %s.\n' % str(e)
         ready = False
     if ready:
@@ -132,22 +138,22 @@ def getNetCDFFile(path,mode='r'):
     if netcdfmodule=='Scientific.IO.NetCDF':
         try:
             nc = Scientific.IO.NetCDF.NetCDFFile(path,mode=mode)
-        except Exception, e:
+        except Exception as e:
             raise NetCDFError('An error occured while opening the NetCDF file "%s": %s' % (path,str(e)))
     elif netcdfmodule=='netCDF4':
         try:
             nc = netCDF4.Dataset(path,mode=mode,format='NETCDF3_CLASSIC')
-        except Exception, e:
+        except Exception as e:
             raise NetCDFError('An error occured while opening the NetCDF file "%s": %s' % (path,str(e)))
     elif netcdfmodule=='pupynere':
         try:
             nc = pupynere.NetCDFFile(path,mode=mode,mmap=False)
-        except Exception, e:
+        except Exception as e:
             raise NetCDFError('An error occured while opening the NetCDF file "%s": %s' % (path,str(e)))
     elif netcdfmodule=='pynetcdf':
         try:
             nc = pynetcdf.NetCDFFile(path,mode=mode)
-        except Exception, e:
+        except Exception as e:
             raise NetCDFError('An error occured while opening the NetCDF file "%s": %s' % (path,str(e)))
     else:
         # No NetCDF module found - raise exception.
@@ -270,7 +276,7 @@ def getNcData(ncvar,bounds=None,maskoutsiderange=True):
         try:
             return numpy.asarray(val,**kwargs)
         except:
-            print 'WARNING: NetCDF attribute "%s" cannot be cast to required data type (%s) and will therefore be ignored. Attribute type: %s. Attribute value: %s.' % (att,kwargs.get('dtype','unspecified'),type(val),val)
+            print('WARNING: NetCDF attribute "%s" cannot be cast to required data type (%s) and will therefore be ignored. Attribute type: %s. Attribute value: %s.' % (att,kwargs.get('dtype','unspecified'),type(val),val))
         return None
 
     # Process the various COARDS/CF variable attributes for missing data.
@@ -279,7 +285,7 @@ def getNcData(ncvar,bounds=None,maskoutsiderange=True):
         valrange = getAttribute('valid_range',dtype=dat.dtype)
         if valrange is not None:
             if not len(valrange)==2:
-                print 'WARNING: NetCDF attribute "valid_range" must consist of two values, but contains %i. It will be ignored.' % len(ncvar.valid_range)
+                print('WARNING: NetCDF attribute "valid_range" must consist of two values, but contains %i. It will be ignored.' % len(ncvar.valid_range))
             else:
                 if minval is None or valrange[0]>minval: minval = valrange[0]
                 if maxval is None or valrange[1]<maxval: maxval = valrange[1]
@@ -406,43 +412,49 @@ class MultiNetCDFFile(object):
                 if hasattr(ncvar,name): return getattr(ncvar,name)
             raise AttributeError(name)
 
-    class Variables(object,UserDict.DictMixin):
+    class Variables(DictMixin):
         def __init__(self,store):
             self.store = store
-    
+
         def __getitem__(self,name):
             ncvar = self.store.ncs[0].variables[name]
             if self.store.variabledim not in ncvar.dimensions: return ncvar
             return MultiNetCDFFile.Variable(self.store,name)
-        
+
         def keys(self):
             return self.store.ncs[0].variables.keys()
+
+        def __len__(self):
+            return len(self.store.ncs[0].variables.keys())
+
+        def __iter__(self):
+            return iter(self.store.ncs[0].variables.keys())
 
     def __init__(self,*args,**kwargs):
         paths = []
         for arg in args:
             paths += glob.glob(arg)
-            
+
         # Functions for comparing two dictionaries, capable of
         # dealing with elements that are numpy arrays.
         def cmpattributes(atts1,atts2):
-            match = set(atts1.iterkeys())==set(atts2.iterkeys())
+            match = set(atts1.keys())==set(atts2.keys())
             if not match: return False
-            for k in atts1.iterkeys():
+            for k in atts1.keys():
                 match = atts1[k]==atts2[k]
                 if hasattr(match,'all'): match = match.all() 
                 if not match: return False
             return True
-                    
+
         # Open NetCDF files.
         self.ncs = [getNetCDFFile(path) for path in paths]
-                
+
         # Get list of all dimensions and variables (unions over all files).
         dims,vars = set(),set()
         for nc in self.ncs:
             dims.update(nc.dimensions.keys())
             vars.update(nc.variables.keys())
-        
+
         # Check if all files use all dimensions and variables.
         # For variables, also check if the variable attributes are identical everywhere.
         dim2coords,var2attr = {},{}
@@ -452,7 +464,7 @@ class MultiNetCDFFile(object):
             for var in vars:
                 # Check for presence of variable.
                 assert var in nc.variables,'Variable %s does not appear in in "%s". For multiple NetCDF files to be loaded as one single file, they must all contain the same variables.' % (var,path)
-                
+
                 # Compare attributes
                 ncvar = nc.variables[var]
                 atts = dict([(k,getattr(ncvar,k)) for k in getNcAttributes(ncvar)])
@@ -460,7 +472,7 @@ class MultiNetCDFFile(object):
                     var2attr[var] = atts
                 else:
                     assert cmpattributes(atts,var2attr[var]),'Current attributes of variable "%s" (%s) do not match its attributes in one of the other NetCDF files (%s).' % (var,atts,var2attr[var])
-                    
+
             # Check dimensions
             for dim in dims:
                 # Check for presence of dimension in dimensions and coordinate variables.
@@ -469,7 +481,7 @@ class MultiNetCDFFile(object):
                 # If no coordinate values are available, just continue with the next dimension.
                 # (we will not be able to determine the file order, so we accept the given order)
                 if dim not in nc.variables: continue
-                
+
                 # Compare coordinate values.
                 coord = getNcData(nc.variables[dim])
                 if dim not in dim2coords:
@@ -479,7 +491,7 @@ class MultiNetCDFFile(object):
                         # These coordinates vary between files - make sure this is the only dimension that differs.
                         assert self.variabledim is None,'More than one dimension (%s, %s) varies between files.' % (self.variabledim,dim)
                         self.variabledim = dim
-                        
+
         # Make sure that the values of one dimension vary between files.
         if self.variabledim is None:
             raise MultiNetCDFFile.CoordinatesIdenticalException('All dimensions have the same coordinates in the supplied files. One dimension should differ between files in order for them to be loaded as a single file.')
@@ -490,11 +502,11 @@ class MultiNetCDFFile(object):
         for nc in self.ncs:
             if self.variabledim in nc.variables: nc2coords[nc] = nc.variables[self.variabledim][0]
         if len(nc2coords)==len(self.ncs):
-            self.ncs.sort(cmp=lambda x,y: cmp(nc2coords[x],nc2coords[y]))
-        
+            self.ncs.sort(key=lambda x:  nc2coords[x])
+
         # Determine the length of all dimensions in the merged file, and
         # determine the overlap (if any) between the different files.
-        self.dim2length = dict([(k,len(v)) for k,v in dim2coords.iteritems()])
+        self.dim2length = dict([(k,len(v)) for k,v in dim2coords.items()])
         self.dim2length[self.variabledim] = 0
         self.overlaps = []
         lastcoord = None
@@ -506,7 +518,7 @@ class MultiNetCDFFile(object):
                 self.overlaps.append(overlap)
             self.dim2length[self.variabledim] += len(curcoord)
             lastcoord = curcoord
-        
+
     def ncattrs(self):
         # Just return the NetCDF attributes of the first file.
         return getNcAttributes(self.ncs[0])
@@ -516,13 +528,13 @@ class MultiNetCDFFile(object):
             return self.dim2length
         elif name=='variables':
             return MultiNetCDFFile.Variables(self)
-            
+
         # Request for a custom attribute - loop over all NetCDF files until it is found.
         for nc in self.ncs:
             if hasattr(nc,name): return getattr(nc,name)
-            
+
         raise AttributeError(name)
-        
+
     def close(self):
         # Close all NetCDf files.
         for nc in self.ncs: nc.close()
@@ -644,7 +656,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                         if all([(cd in dims) for cd in coorddims]):
                             coordvar2dims[coordvar] = coorddims
                             coordvars.append(coordvar)
-                for coordvar in sorted(coordvars,cmp=lambda x,y: cmp(len(coordvar2dims[x]),len(coordvar2dims[y]))):
+                for coordvar in sorted(coordvars,key=lambda x: len(coordvar2dims[x])):
                     for coorddim in reversed(coordvar2dims[coordvar]):
                         if coorddim not in dim2coordvar:
                             dim2coordvar[coorddim] = coordvar
@@ -792,9 +804,9 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                 addborders.append((addleft,addcenter,addright))
                 
             def getdata(bounds,stag):
-                print 'Request for:'
+                print('Request for:')
                 for i,b in enumerate(bounds):
-                    print '   ',b,(i in stag)
+                    print('   ',b,(i in stag))
                 return 0.
 
             def processdim(bounds,addborders,curslice,curstagger,curtarget):
@@ -828,7 +840,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
           ncvar = nc.variables[self.ncvarname]
           try:
             dat = getNcData(ncvar,bounds,maskoutsiderange=self.store.maskoutsiderange)
-          except Exception,e:
+          except Exception as e:
             strex = str(e)
             if strex=='': strex = e.__class__.__name__
             raise Exception('Unable to read data from netCDF variable "%s": %s' % (self.ncvarname,strex))
@@ -842,7 +854,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
           bounds = self.translateSliceSpecification(bounds)
           
           # Retrieve the data values
-          n = 1L
+          n = longint(1)
           for l in self.getShape(): n *= l
           if cache and n<1000000:
               # Take all data from cache if present, otherwise read all data from NetCDF and store it in cache first.
@@ -928,7 +940,8 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                     # The variable itself points to a variable with staggered coordinates (CF convention: bounds attribute).
                     boundvar = coordvar.getProperties()['bounds']
                     stagcoordvar = self.store.getVariable_raw(boundvar)
-                    if stagcoordvar is None: print 'WARNING: boundary values for coordinate variable %s are set to variable %s, but this variable is not present in the NetCDF file.' % (coordvar.getName(),boundvar)
+                    if stagcoordvar is None:
+                        print('WARNING: boundary values for coordinate variable %s are set to variable %s, but this variable is not present in the NetCDF file.' % (coordvar.getName(),boundvar))
 
             class NetCDFWarning(Exception): pass
 
@@ -978,9 +991,9 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                     # Coordinates should not have a mask - undo the masking.
                     if numpy.ma.is_masked(coords_stag):
                         coords_stag = numpy.ma.getdata(coords_stag)
-                except NetCDFWarning,e:
+                except NetCDFWarning as e:
                     # Problem with specified interface coordinate - make sure they auto-generated instead.
-                    print e
+                    print(e)
                     stagcoordvar = None
 
             if stagcoordvar is None:
@@ -1021,7 +1034,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
         self.maskoutsiderange = True
 
         if path is not None:
-            if isinstance(path,(tuple,list,basestring)):
+            if isinstance(path,(tuple,list, (str, u''.__class__))):
                 # Path to a NetCDF file is provided, or a list/tuple of paths.
                 self.load(path,*args,**kwargs)
             else:
@@ -1057,7 +1070,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
         return res
 
     def save(self,path):
-        assert isinstance(self.datafile,basestring),'Only single NetCDF files can be saved.'
+        assert isinstance(self.datafile, (str, u''.__class__)), 'Only single NetCDF files can be saved.'
         shutil.copyfile(self.datafile,path)
 
     def unlink(self):
@@ -1159,7 +1172,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
         nctype = {'float32':'f','float64':'d'}[str(data.dtype)]
         if name is None: name = variable.getName()
         var = self.addVariable(name,dims,datatype=nctype,missingvalue=props.get('_FillValue',None))
-        for key,value in props.iteritems():
+        for key,value in props.items():
             try:
                 var.setProperty(key,value)
             except AttributeError:  # netcdf-python does not allow _FillValue to be set after variable creation - ignore this.

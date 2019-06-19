@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import math,os.path,xml.dom.minidom
 
 import matplotlib, matplotlib.colors, matplotlib.dates, matplotlib.font_manager, matplotlib.ticker
@@ -521,7 +523,8 @@ class FigureAnimator(object):
         while True:            
             hasmore = self.nextFrame()
             self.figure.setUpdating(True)
-            if verbose: print 'Creating frame %i of %s...' % (self.index+1,self.length)
+            if verbose:
+                print('Creating frame %i of %s...' % (self.index+1,self.length))
             path = os.path.join(targetdir,nametemplate % self.index)
             self.figure.exportToFile(path,dpi=dpi)
             if not hasmore: break
@@ -733,7 +736,7 @@ class Figure(xmlstore.util.referencedobject):
         The properties can be specified as path to an XML file, an in-memory
         XML node, among others.
         """
-        if isinstance(props,(basestring,xmlstore.datatypes.DataFile)):
+        if isinstance(props,(str, u''.__class__, xmlstore.datatypes.DataFile)):
             # Load properties from file - versions may differ and will be converted automatically
             self.properties.load(props)
         else:
@@ -757,7 +760,7 @@ class Figure(xmlstore.util.referencedobject):
         the first registered source will be used. The specified variable must
         match the name of a variable in the data source to be used.
         """
-        assert source is None or isinstance(source,basestring), 'If the "source" option is specified, it must be a string.'
+        assert source is None or isinstance(source, (str, u''.__class__)), 'If the "source" option is specified, it must be a string.'
         if source is None: source = self.defaultsource
         datanode = self.properties['Data']
         varname = self.source.normalizeExpression(varname,source)
@@ -799,7 +802,7 @@ class Figure(xmlstore.util.referencedobject):
         """Copies all plot properties and data sources from the supplied source figure.
         """
         properties = sourcefigure.getPropertiesCopy()
-        for name,child in sourcefigure.source.children.iteritems():
+        for name,child in sourcefigure.source.children.items():
             self.source.addChild(child,name)
         self.defaultsource = sourcefigure.defaultsource
         self.setProperties(properties)
@@ -833,9 +836,9 @@ class Figure(xmlstore.util.referencedobject):
     def draw(self,figure=None):
         # Below: code for debugging superfluous plot updates (sends stack trace to stdout)
         #import traceback
-        #print '--- stack for call to update ---'   
+        #print('--- stack for call to update ---'   )
         #trace = traceback.format_list(traceback.extract_stack(limit=10))    
-        #for l in trace: print l,
+        #for l in trace: print(l, end='')
         
         if figure is None: figure = self.figure
             
@@ -922,7 +925,7 @@ class Figure(xmlstore.util.referencedobject):
             # Get the path of the data source (data source identifier + variable id)
             varpath = seriesnode.getSecondaryId()
             if varpath=='':
-                print 'Skipping data series %i because the secondary node id (i.e., variable source and name) is not set.' % iseries
+                print('Skipping data series %i because the secondary node id (i.e., variable source and name) is not set.' % iseries)
                 continue
                 
             var = self.source[varpath]
@@ -959,7 +962,7 @@ class Figure(xmlstore.util.referencedobject):
             dimbounds = [slice(None)]*len(originaldims)
             
             # Apply slices (if any)
-            for dim,index in self.slices.iteritems():
+            for dim,index in self.slices.items():
                 if dim in originaldims:
                     dimbounds[originaldims.index(dim)] = index
                     
@@ -1274,7 +1277,7 @@ class Figure(xmlstore.util.referencedobject):
                     if (missinglon<0.).any() and (lons[:,-2]-lons[:,0]<360.).all():
                         # The first and final cell overlap, but the first and one-but-last do not.
                         # Assume overlap is due to numerical artifacts, and adjust the rightmost coordinate.
-                        #print 'synchronizing left and right boundary because longitude overlaps for %i latitudes' % (missinglon<0.).sum()
+                        #print('synchronizing left and right boundary because longitude overlaps for %i latitudes' % (missinglon<0.).sum())
                         lons[:,-1] = lons[:,0]+360.-1.e-4
                         addcyclic = False
                     
@@ -1287,7 +1290,7 @@ class Figure(xmlstore.util.referencedobject):
                         for k in 'xyUVC':
                             if k not in info or i0==0: continue
                             if addcyclic:
-                                #print 'Adding cyclic point for '+k
+                                #print('Adding cyclic point for '+k)
                                 info[k] = numpy.ma.concatenate((info[k],info[k].take((0,),axis=1)),axis=1)
                                 if k=='x': info[k][:,-1] += 360.-1.e-4
                             if hasattr(info[k],'mask'):

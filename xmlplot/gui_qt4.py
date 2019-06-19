@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # Import modules from standard Python (>= 2.4) library
 import datetime, os.path, sys
 
@@ -27,7 +29,7 @@ def getFontSubstitute(fontname):
     supplied font name. This is needed for MS Windows, which maintains a font
     substitution table.
     """
-    assert isinstance(fontname,basestring), 'Supplied argument must be a string.'
+    assert isinstance(fontname, (str, u''.__class__)), 'Supplied argument must be a string.'
     
     # Currently font substitution is only supported if the fontname is ASCII,
     # because QueryValueEx does not accept a unicode string as name of the subkey.
@@ -75,7 +77,7 @@ class FontNameEditor(xmlstore.gui_qt4.SimpleSelectEditor):
             fontnames = list(set([font.name for font in fm.ttflist]))
         else:
             fontnames = fm.ttfdict.keys()
-        return sorted(fontnames, cmp=lambda x,y: cmp(x.lower(), y.lower()))
+        return sorted(fontnames, key=lambda x: x.lower())
 
 xmlstore.gui_qt4.registerEditor('fontname',FontNameEditor)
 
@@ -143,7 +145,7 @@ class MarkerTypeEditor(xmlstore.gui_qt4.StringWithImageEditor):
     width,height = 15.,15.
     
     def __init__(self,parent,node,**kwargs):
-        items = [''] + [k for k,v in matplotlib.lines.Line2D.markers.iteritems() if isinstance(k,basestring) and v!='_draw_nothing']
+        items = [''] + [k for k,v in matplotlib.lines.Line2D.markers.items() if isinstance(k, (str, u''.__class__)) and v!='_draw_nothing']
         xmlstore.gui_qt4.StringWithImageEditor.__init__(self,parent,node,items,**kwargs)
 
     @classmethod
@@ -191,7 +193,7 @@ class LineStyleEditor(xmlstore.gui_qt4.StringWithImageEditor):
     width,height = 50.,10.
     
     def __init__(self,parent,node,**kwargs):
-        items = [''] + [k for k,v in matplotlib.lines.Line2D.lineStyles.iteritems() if isinstance(k,basestring) and v!='_draw_nothing']
+        items = [''] + [k for k,v in matplotlib.lines.Line2D.lineStyles.items() if isinstance(k, (str, u''.__class__)) and v!='_draw_nothing']
         xmlstore.gui_qt4.StringWithImageEditor.__init__(self,parent,node,items,**kwargs)
     
     @classmethod
@@ -551,7 +553,7 @@ class FigurePanel(QtWidgets.QWidget):
         if ownupdating: self.figure.setUpdating(False)
         self.figure.clearVariables()
         self.figure.clearProperties(deleteoptional=False)
-        if isinstance(varstore,basestring) or varstore is None:
+        if isinstance(varstore, (str, u''.__class__)) or varstore is None:
             self.figure.addVariable(varname,source=varstore)
         else:
             self.figure.clearSources()
@@ -702,8 +704,8 @@ class FigurePanel(QtWidgets.QWidget):
         filter2exportercls = {}
         filter2format = {}
         default_filetype = 'png'
-        for exportercls in exporters.itervalues():
-            for name, exts in exportercls.getFileTypes(self.figure).iteritems():
+        for exportercls in exporters.values():
+            for name, exts in exportercls.getFileTypes(self.figure).items():
                 exts_list = ' '.join(['*.%s' % ext for ext in exts])
                 filter = '%s (%s)' % (name, exts_list)
                 if default_filetype in exts:

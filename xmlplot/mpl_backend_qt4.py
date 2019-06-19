@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from matplotlib.backend_bases import FigureCanvasBase, TimerBase
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
@@ -55,7 +57,7 @@ class FigureCanvasQT(FigureCanvasBase, QtWidgets.QWidget):
     # left 1, middle 2, right 3
     buttond = {1:1, 2:3, 4:2}
     def __init__( self, figure ):
-        if DEBUG: print 'FigureCanvasQt: ', figure
+        if DEBUG: print('FigureCanvasQt: ', figure)
 
         QtWidgets.QWidget.__init__( self )
         FigureCanvasBase.__init__( self, figure )
@@ -86,14 +88,14 @@ class FigureCanvasQT(FigureCanvasBase, QtWidgets.QWidget):
         y = self.figure.bbox.height - event.pos().y()
         button = self.buttond[event.button()]
         FigureCanvasBase.button_press_event( self, x, y, button )
-        if DEBUG: print 'button pressed:', event.button()
+        if DEBUG: print('button pressed:', event.button())
 
     def mouseMoveEvent( self, event ):
         x = event.x()
         # flipy so y=0 is bottom of canvas
         y = self.figure.bbox.height - event.y()
         FigureCanvasBase.motion_notify_event( self, x, y )
-        #if DEBUG: print 'mouse move'
+        #if DEBUG: print('mouse move')
 
     def mouseReleaseEvent( self, event ):
         x = event.x()
@@ -101,7 +103,7 @@ class FigureCanvasQT(FigureCanvasBase, QtWidgets.QWidget):
         y = self.figure.bbox.height - event.y()
         button = self.buttond[event.button()]
         FigureCanvasBase.button_release_event( self, x, y, button )
-        if DEBUG: print 'button released'
+        if DEBUG: print('button released')
 
     def wheelEvent( self, event ):
         x = event.x()
@@ -111,27 +113,27 @@ class FigureCanvasQT(FigureCanvasBase, QtWidgets.QWidget):
         steps = event.delta()/120
         if (event.orientation() == QtCore.Qt.Vertical):
             FigureCanvasBase.scroll_event( self, x, y, steps)
-            if DEBUG: print 'scroll event : delta = %i, steps = %i ' % (event.delta(),steps)
+            if DEBUG: print('scroll event : delta = %i, steps = %i ' % (event.delta(),steps))
 
     def keyPressEvent( self, event ):
         key = self._get_key( event )
         if key is None:
             return
         FigureCanvasBase.key_press_event( self, key )
-        if DEBUG: print 'key press', key
+        if DEBUG: print('key press', key)
 
     def keyReleaseEvent( self, event ):
         key = self._get_key(event)
         if key is None:
             return
         FigureCanvasBase.key_release_event( self, key )
-        if DEBUG: print 'key release', key
+        if DEBUG: print('key release', key)
 
     def resizeEvent( self, event ):
-        if DEBUG: print 'resize (%d x %d)' % (event.size().width(), event.size().height())
+        if DEBUG: print('resize (%d x %d)' % (event.size().width(), event.size().height()))
         w = event.size().width()
         h = event.size().height()
-        if DEBUG: print "FigureCanvasQtAgg.resizeEvent(", w, ",", h, ")"
+        if DEBUG: print("FigureCanvasQtAgg.resizeEvent(", w, ",", h, ")")
         dpival = self.figure.dpi
         winch = w/dpival
         hinch = h/dpival
@@ -208,7 +210,7 @@ class FigureCanvasQTAgg( FigureCanvasQT, FigureCanvasAgg ):
     afterResize = QtCore.Signal()
 
     def __init__( self, figure ):
-        if DEBUG: print 'FigureCanvasQtAgg: ', figure
+        if DEBUG: print('FigureCanvasQtAgg: ', figure)
         FigureCanvasQT.__init__( self, figure )
         FigureCanvasAgg.__init__( self, figure )
         self.drawRect = False
@@ -235,7 +237,7 @@ class FigureCanvasQTAgg( FigureCanvasQT, FigureCanvasAgg ):
         """
 
         #FigureCanvasQT.paintEvent( self, e )
-        if DEBUG: print 'FigureCanvasQtAgg.paintEvent: ', self, \
+        if DEBUG: print('FigureCanvasQtAgg.paintEvent: ', self, \)
            self.get_width_height()
 
         if self.replot:
@@ -288,7 +290,7 @@ class FigureCanvasQTAgg( FigureCanvasQT, FigureCanvasAgg ):
         Draw the figure when xwindows is ready for the update
         """
 
-        if DEBUG: print "FigureCanvasQtAgg.draw", self
+        if DEBUG: print("FigureCanvasQtAgg.draw", self)
         self.replot = True
 
         # JB: Part of the figure will be transparent (everything outside the axes region),

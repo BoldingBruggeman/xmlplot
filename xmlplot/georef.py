@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os.path
 import zipfile
 import StringIO
@@ -134,13 +135,15 @@ class GeoRefExporter(plot.BaseExporter):
         self.draw()
 
         # Draw the map in an in-memory buffer.
-        if debug: print 'Drawing image in memory...'
+        if debug:
+            print('Drawing image in memory...')
         self.source.canvas.draw()
         widthpx,heightpx = map(int,self.source.canvas.renderer.get_canvas_width_height())
         buffer = self.source.canvas.renderer._renderer.buffer_rgba(0,0)
         arr = numpy.frombuffer(buffer,numpy.uint8)  # This should create a view on the buffer, rather than a copy of the data
         arr.shape = heightpx,widthpx,4
-        if debug: print 'Resulting image is %i x %i pixels.' % (widthpx,heightpx)
+        if debug:
+            print('Resulting image is %i x %i pixels.' % (widthpx,heightpx))
 
         # Get minimum and maximum of axes to determine pixel dimensions and map offset.
         xmin,xmax,ymin,ymax = self.getAxesRanges()
@@ -170,7 +173,8 @@ class GeoRefExporter(plot.BaseExporter):
         dst_ds.SetProjection(wkt)
 
         # Store data in GeoTIFF
-        if debug: print 'Writing image to GeoTIFF...'
+        if debug:
+            print('Writing image to GeoTIFF...')
         for i in range(4):  # RGBA
             dst_ds.GetRasterBand(i+1).WriteArray(arr[:,:,i])
 

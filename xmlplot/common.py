@@ -1,7 +1,11 @@
-#$Id: common.py,v 1.49 2010-12-29 12:13:04 jorn Exp $
+from __future__ import print_function
 
 # Import modules from standard Python library
-import sys,os.path,UserDict,re,xml.dom.minidom,datetime
+import sys,os.path,re,xml.dom.minidom,datetime
+try:
+    from collections import Mapping as DictMixin
+except ImportError:
+    from UserDict import DictMixin
 
 # Import additional third party modules
 import numpy
@@ -116,8 +120,8 @@ def convertMatlabDateFormat(fmt):
         del python2matlab['%H']
     else:
         del python2matlab['%I']
-    matlab2python = dict((v,k) for k,v in python2matlab.iteritems())
-    query = re.compile('|'.join(sorted(matlab2python.keys(),cmp=lambda x,y: cmp(len(y),len(x)))))
+    matlab2python = dict((v,k) for k,v in python2matlab.items())
+    query = re.compile('|'.join(sorted(matlab2python.keys(),key=len,reverse=True)))
     newfmt,ipos = '',0
     while True:
         match = query.search(fmt,ipos)
@@ -544,7 +548,7 @@ def processEllipsis(slics,ndims):
             for j in range(ndims-len(newslics)): newslics.insert(i,slice(None))
     return tuple(newslics)
 
-class VariableStore(UserDict.DictMixin):
+class VariableStore(DictMixin):
     """Abstract base class for objects containing one or more variables that
     can be plotted. It contains functionality for retrieving variable
     short/long names, information on dimensions, and a function that returns
@@ -586,7 +590,13 @@ class VariableStore(UserDict.DictMixin):
         
     def __contains__(self,varname):
         if self.rawlabels is not None: return varname in self.rawlabels
-        return UserDict.DictMixin.__contains__(self,varname)
+        return DictMixin.__contains__(self,varname)
+
+    def __len__(self):
+        return len(self.getVariableNames())
+
+    def __iter__(self):
+        return iter(self.getVariableNames())
 
     def getVariable(self,varname):
         """Returns a Variable object for the given short variable name.
@@ -630,7 +640,7 @@ class VariableStore(UserDict.DictMixin):
         # Evaluate the expression
         try:
             result = expressions.VariableExpression.resolve(expression,namespace)
-        except Exception,e:
+        except Exception as e:
             #raise Exception('Unable to resolve expression "%s" to a valid data object. Global table contains: %s. Error: %s' % (expression,', '.join(sorted(namespace.keys())),e))
             raise Exception('Unable to resolve expression "%s" to a valid data object. Error: %s' % (expression,e))
         return result
@@ -642,7 +652,7 @@ class VariableStore(UserDict.DictMixin):
             varnames = self.rawlabels.keys()
         else:
             varnames = self.getVariableNames_raw()
-        for childname,child in self.children.iteritems():
+        for childname,child in self.children.items():
             if isinstance(child,Variable):
                 varnames.append(childname)
             elif alllevels and isinstance(child,VariableStore):
@@ -653,7 +663,7 @@ class VariableStore(UserDict.DictMixin):
     def getPlottableVariableNames(self):
         varnames = self.getPlottableVariableNames_raw()
         if self.rawlabels is not None: varnames = [self.newlabels[varname] for varname in varnames]
-        for childname,child in self.children.iteritems():
+        for childname,child in self.children.items():
             if isinstance(child,Variable): varnames.append(childname)
         return varnames
         
@@ -669,12 +679,12 @@ class VariableStore(UserDict.DictMixin):
         """
         longnames = self.getVariableLongNames_raw()
         if self.rawlabels is not None:
-            longnames = dict([(self.newlabels[varname],longname) for (varname,longname) in longnames.iteritems()])
-        for childname,child in self.children.iteritems():
+            longnames = dict([(self.newlabels[varname],longname) for (varname,longname) in longnames.items()])
+        for childname,child in self.children.items():
             if isinstance(child,Variable):
                 longnames[childname] = child.getLongName()
             elif alllevels and isinstance(child,VariableStore):
-                for vn,ln in child.getVariableLongNames(alllevels=alllevels).iteritems():
+                for vn,ln in child.getVariableLongNames(alllevels=alllevels).items():
                     longnames['%s[\'%s\']' % (childname,vn)] = ln
         return longnames
         
@@ -918,14 +928,14 @@ class Variable(object):
             # Copy values up to the first gap
             if valid[0]:
                 gapstart = gapstarts.pop(0)
-                #print 'copying old data until first gap at %i' % gapstart
+                #print('copying old data until first gap at %i' % gapstart)
                 newslice.coords_stag[0][:gapstart] = self.coords_stag[0][:gapstart]
                 i = gapstart
                 
             # Process all gaps (also takes care of copying values after a gap)
             while gapstops:
                 gapstop = gapstops.pop(0)
-                #print 'handling gap from %i to %i' % (gapstart,gapstop)
+                #print('handling gap from %i to %i' % (gapstart,gapstop))
                 if gapstart==0:
                     # First value is a gap: copy leftmost bound
                     newslice.coords_stag[0][0] = self.coords_stag[0][0]
@@ -946,7 +956,7 @@ class Variable(object):
                 else:
                     gapstart = len(self.data)+1
                     assert not gapstops, 'No gap starts left, but there are still gap stops.'
-                #print 'copying original values between %i and %i' % (gapstop,gapstart)
+                #print('copying original values between %i and %i' % (gapstop,gapstart))
                 newslice.coords_stag[0][i:i+gapstart-gapstop-1] = self.coords_stag[0][gapstop+1:gapstart]
                 
                 i += gapstart-gapstop-1
@@ -961,7 +971,7 @@ class Variable(object):
             oridims = list(self.dimensions)
             
             # Iterate over all dimensions that we have to interpolate.
-            for dimname,section in kwargs.iteritems():
+            for dimname,section in kwargs.items():
                 assert dimname in oridims,'Dimension %s is not used by this variable slice. Used dimensions: %s.' % (dimname,', '.join(oridims))
                 idim = oridims.index(dimname)
                 section = numpy.atleast_1d(section)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 from xmlstore.qt_compat import QtCore,QtGui,QtWidgets
 
