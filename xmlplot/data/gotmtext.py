@@ -348,14 +348,14 @@ class LinkedMatrix(LinkedFileVariableStore):
     def parseDataFile(self,callback=None):
         if self.datafile is None or not self.datafile.isValid(): return None
 
-            if self.type==0:
-                # Unknown number of rows
-                res = self.loadDataFile_UnknownCount(callback)
-            elif self.type==1:
-                # Known number of rows
-                res = self.loadDataFile_KnownCount(callback)
-            else:
-                assert False, 'unknown LinkedMatrix type %i.' % self.type
+        if self.type==0:
+            # Unknown number of rows
+            res = self.loadDataFile_UnknownCount(callback)
+        elif self.type==1:
+            # Known number of rows
+            res = self.loadDataFile_KnownCount(callback)
+        else:
+            assert False, 'unknown LinkedMatrix type %i.' % self.type
 
         return res
         
