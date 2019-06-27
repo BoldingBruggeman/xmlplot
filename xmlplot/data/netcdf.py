@@ -5,8 +5,6 @@ try:
 except ImportError:
     from UserDict import DictMixin
 
-from builtins import int as longint
-
 # Import additional third party modules
 import numpy
 
@@ -854,7 +852,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
           bounds = self.translateSliceSpecification(bounds)
           
           # Retrieve the data values
-          n = longint(1)
+          n = 1
           for l in self.getShape(): n *= l
           if cache and n<1000000:
               # Take all data from cache if present, otherwise read all data from NetCDF and store it in cache first.
