@@ -237,8 +237,8 @@ class FigureCanvasQTAgg( FigureCanvasQT, FigureCanvasAgg ):
         """
 
         #FigureCanvasQT.paintEvent( self, e )
-        if DEBUG: print('FigureCanvasQtAgg.paintEvent: ', self, \)
-           self.get_width_height()
+        if DEBUG: print('FigureCanvasQtAgg.paintEvent: ', self, \
+           self.get_width_height())
 
         if self.replot:
             FigureCanvasAgg.draw(self)
