@@ -12,7 +12,7 @@ import matplotlib.lines
 
 # Import our own custom modules
 import xmlstore.xmlstore,xmlstore.util,xmlstore.gui_qt4
-import plot,data,common,mpl_backend_qt4
+from . import plot, data, common, mpl_backend_qt4
 
 # ====================================================================================
 # Utility functions
@@ -338,7 +338,7 @@ class FigureToolbar(matplotlib.backend_bases.NavigationToolbar2):
         w = abs(x1 - x0)
         h = abs(y1 - y0)
 
-        rect = [ int(val)for val in min(x0,x1), min(y0, y1), w, h ]
+        rect = [int(val) for val in (min(x0,x1), min(y0, y1), w, h)]
         self.canvas.drawRectangle( rect )
 
     def draw(self):
@@ -1095,7 +1095,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
                 if datafile is not None: oldlinkedfile.release()
             finally:
                 self.progressdialog.reset()
-        except Exception,e:
+        except Exception as e:
             QtWidgets.QMessageBox.critical(self, 'Invalid data file', str(e), QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
             if datafile is None:
                 # No backup file available (this is the initialization call with the original data file)

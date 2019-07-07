@@ -1,8 +1,12 @@
 from __future__ import print_function
 
-import UserDict,types
+try:
+    from collections import Mapping as DictMixin
+except ImportError:
+    from UserDict import DictMixin
+import types
 import numpy
-import common
+from . import common
 
 def getShape(obj):
     if isinstance(obj,(int,float)):
@@ -16,7 +20,7 @@ def getShape(obj):
     else:
         return None
 
-class ExpressionNamespace(UserDict.DictMixin):
+class ExpressionNamespace(DictMixin):
     """Encapsulates a list of dictionary-like objects, that are query from start
     to finish when an item is requested from the containing object. The first match is
     returned.
@@ -40,7 +44,7 @@ class ExpressionNamespace(UserDict.DictMixin):
                 return table[name]
         raise KeyError('"%s" does not exist in namespace' % name)
         
-class LazyStore(UserDict.DictMixin):
+class LazyStore(DictMixin):
     """The light-weight object encapsulates a VariableStore, from which children
     (variables and child stores) can be obtained as attributes (__getattr__) or by indexing
     (__getitem__). Children are in turn retrieved as "lazy" objects, i.e., LazyVariable and

@@ -5,7 +5,8 @@ import math,os.path,xml.dom.minidom
 import matplotlib, matplotlib.colors, matplotlib.dates, matplotlib.font_manager, matplotlib.ticker
 import numpy
 
-import xmlstore.xmlstore,xmlstore.util,common,expressions
+import xmlstore.xmlstore, xmlstore.util
+from . import common, expressions
 
 class BaseExporter:
     @classmethod
