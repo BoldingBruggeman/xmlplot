@@ -976,6 +976,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                             # We take a single [centered] index from this dimension:
                             # Get the left and right bounds, so we can average them later.
                             coordslice_stag.append(slice(slc,slc+2))
+                    coordslice_stag = tuple(coordslice_stag)
                     if isinstance(stagcoordvar,numpy.ndarray):
                         coords_stag = stagcoordvar[coordslice_stag]
                     else:
