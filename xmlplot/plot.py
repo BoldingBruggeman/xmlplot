@@ -239,19 +239,22 @@ class CustomDateFormatter(matplotlib.dates.DateFormatter):
     """
     def __init__(self,pattern):
         matplotlib.dates.DateFormatter.__init__(self,pattern)
+        self.pattern = pattern
 
-    def strftime(self, dt, fmt):
+    def __call__(self, x, pos=0):
+        fmt = self.pattern
+        dt = matplotlib.dates.num2date(x, self.tz)
         if ('%e' in fmt):
-            dayname = matplotlib.dates.DateFormatter.strftime(self,dt,'%A')
+            dayname = dt.strftime('%A')
             fmt = str(fmt.replace('%e',dayname[0]))
         if ('%n' in fmt):
-            month = matplotlib.dates.DateFormatter.strftime(self,dt,'%b')
+            month = dt.strftime('%b')
             fmt = str(fmt.replace('%n',month[0]))
         if ('%Q' in fmt):
-            monthnr = int(matplotlib.dates.DateFormatter.strftime(self,dt,'%m'))
+            monthnr = int(dt.strftime('%m'))
             fmt = fmt.replace('%Q','Q%i' % math.ceil(monthnr/3.))
-        return matplotlib.dates.DateFormatter.strftime(self,dt,fmt)
-        
+        return dt.strftime(fmt)
+
 class VariableTransform(common.Variable):
     """Abstract base class for variable transform. By default it inherits
     most properties (unit, dimensions) from the source variable, while the
