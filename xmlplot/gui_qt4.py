@@ -584,19 +584,21 @@ class FigurePanel(QtWidgets.QWidget):
         """Called when the user clicks the "Zoom" button.
         """
         self.navtoolbar.zoom( self, *args )
+        self.actPan.setChecked(False)
 
     def onPanClicked(self,*args):
-        """Called when the user clicks the "Zoom" button.
+        """Called when the user clicks the "Pan" button.
         """
         self.navtoolbar.pan( self, *args )
+        self.actZoom.setChecked(False)
 
     def updateAxesBounds(self):
         """Called by the attached FigureToolbar object just after the
         bounds of the figure axes have been changed with the zoom
-        functionality, but [supposedly] before the MatPlotLib figue has
+        functionality, but [supposedly] before the MatPlotLib figure has
         been redrawn.
 
-        The new axes bounds are taken from the MatPltoLib figure, and
+        The new axes bounds are taken from the MatPlotLib figure, and
         used to change the explicit axes bounds in our attached Figure.
         This implicitly forces a redraw of the figure.
         """
