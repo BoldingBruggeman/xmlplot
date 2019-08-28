@@ -1,5 +1,8 @@
 from __future__ import print_function
+
 import sys
+import traceback
+
 from xmlstore.qt_compat import QtCore,QtGui,QtWidgets
 
 class ErrorReceiver(QtCore.QObject):
@@ -31,25 +34,17 @@ class ErrorReceiver(QtCore.QObject):
 # Posted errors will be passed to an ErrorDialog.
 errorreceiver = ErrorReceiver()
 
-def redirect_stderr(appname,errortext):
+def redirect_stderr(appname, errortext):
     """Redirects all text written to stderr to a contained class that posts the error
     message to the one and only errorreceiver object. The posting mechanism allows the
     error message to be passed between threads.
     """
-    class Stderr(object):
-        """Customized stderr; when a string is written to this object, it is posted
-        to the one and only errorreceiver object.
-        """
-        softspace = 0   # Must be provided by file-like objects
-        def write(self, text):
-            QtWidgets.QApplication.postEvent(errorreceiver,ErrorReceiver.ErrorEvent(text))
-        def flush(self):
-            pass
-
     ErrorDialog.appname = appname
     ErrorDialog.errortext = errortext
-            
-    sys.stderr = Stderr()
+    def hook(type, value, tb):
+        text = ''.join(traceback.format_exception(type, value, tb))
+        QtWidgets.QApplication.postEvent(errorreceiver,ErrorReceiver.ErrorEvent(text))
+    sys.excepthook = hook
 
 class ErrorDialog(QtWidgets.QWidget):
     errdlg = None
