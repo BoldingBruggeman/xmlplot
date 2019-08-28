@@ -85,13 +85,13 @@ def convertUnitToUnicode(unit):
     """Uses unicode to replace some common ASCII representations of
     degrees/subscript/superscript.
     """
-    unit = unicode(unit)
-    deg  = unichr(176)
+    unit = u''.__class__(unit)
+    deg  = u'\u00B0'
     if unit=='celsius' or unit=='degC': return deg+'C'
     if unit in ('degrees_north','degree_north','degree_N','degrees_N','degreeN','degreesN'): return deg+'North'
     if unit in ('degrees_east', 'degree_east' ,'degree_E','degrees_E','degreeE','degreesE'): return deg+'East'
-    sup2 = unichr(178)
-    sup3 = unichr(179)
+    sup2 = u'\u00B2'
+    sup3 = u'\u00B3'
     unit = unit.replace('s2','s'+sup2)
     unit = unit.replace('s3','s'+sup3)
     unit = unit.replace('m2','m'+sup2)
@@ -611,7 +611,7 @@ class VariableStore(DictMixin):
         return var
         
     def normalizeExpression(self,expression,defaultchild=None):
-        import expressions
+        from . import expressions
         exp = self.getExpression(expression,defaultchild)
         if isinstance(exp,expressions.VariableExpression): return exp.buildExpression()
         return exp.namespacename
@@ -623,7 +623,7 @@ class VariableStore(DictMixin):
         """
         # Create the namespace that must be used when then expression is evaluated.
         import keyword
-        import expressions
+        from . import expressions
         namespace = expressions.ExpressionNamespace(expressions.LazyStore(self))
         if defaultchild is not None:
             defaultvars = {}

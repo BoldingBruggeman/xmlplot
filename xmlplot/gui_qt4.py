@@ -33,7 +33,7 @@ def getFontSubstitute(fontname):
     
     # Currently font substitution is only supported if the fontname is ASCII,
     # because QueryValueEx does not accept a unicode string as name of the subkey.
-    # Not sure if this is only a _winreg issue, or a real Windows limitation...
+    # Not sure if this is only a winreg issue, or a real Windows limitation...
     try:
         fontname = str(fontname)
     except UnicodeError:
@@ -46,19 +46,22 @@ def getFontSubstitute(fontname):
         # "virtual" fonts (e.g. the "dialog box font") to their actual TrueType
         # name. Look up the supplied font name in this table, and return the
         # substitute if present.
-        import _winreg
+        try:
+            import winreg
+        except ImportError:
+            import _winreg as winreg
         hkey = None
         try:
-            hkey = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE,r'SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontSubstitutes')
-            value,datatype = _winreg.QueryValueEx(hkey,fontname)
+            hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,r'SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontSubstitutes')
+            value, datatype = winreg.QueryValueEx(hkey,fontname)
             substitute = value
         except WindowsError:
             pass
         except EnvironmentError:
             pass
         if hkey is not None:
-            _winreg.CloseKey(hkey)
-        
+            winreg.CloseKey(hkey)
+
     return substitute
     
 # ====================================================================================
@@ -122,18 +125,18 @@ class ColorMapEditor(xmlstore.gui_qt4.StringWithImageEditor):
         axes.imshow(a,aspect='auto',cmap=cm,origin='lower')
         ColorMapEditor.canvas.draw()
         if QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian:
-            stringBuffer = ColorMapEditor.canvas.get_renderer()._renderer.tostring_bgra()
+            stringBuffer = ColorMapEditor.canvas.get_renderer()._renderer.buffer_rgba()
         else:
             stringBuffer = ColorMapEditor.canvas.get_renderer()._renderer.tostring_argb()
         qImage = QtGui.QImage(stringBuffer, width, height, QtGui.QImage.Format_ARGB32)
         qPixMap = QtGui.QPixmap.fromImage(qImage)
-        
+
         # Add border
         p = QtGui.QPainter(qPixMap)
         penwidth = p.pen().width()
         if penwidth==0: penwidth=1
         p.drawRect(QtCore.QRectF(0,0,width-penwidth,height-penwidth))
-        
+
         return qPixMap
 
 xmlstore.gui_qt4.registerEditor('colormap',ColorMapEditor)
@@ -178,7 +181,7 @@ class MarkerTypeEditor(xmlstore.gui_qt4.StringWithImageEditor):
         MarkerTypeEditor.canvas.get_renderer().clear()
         MarkerTypeEditor.canvas.draw()
         if QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian:
-            stringBuffer = MarkerTypeEditor.canvas.get_renderer()._renderer.tostring_bgra()
+            stringBuffer = MarkerTypeEditor.canvas.get_renderer()._renderer.buffer_rgba()
         else:
             stringBuffer = MarkerTypeEditor.canvas.get_renderer()._renderer.tostring_argb()
         qImage = QtGui.QImage(stringBuffer, width, height, QtGui.QImage.Format_ARGB32)
@@ -226,7 +229,7 @@ class LineStyleEditor(xmlstore.gui_qt4.StringWithImageEditor):
         LineStyleEditor.canvas.get_renderer().clear()
         LineStyleEditor.canvas.draw()
         if QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian:
-            stringBuffer = LineStyleEditor.canvas.get_renderer()._renderer.tostring_bgra()
+            stringBuffer = LineStyleEditor.canvas.get_renderer()._renderer.buffer_rgba()
         else:
             stringBuffer = LineStyleEditor.canvas.get_renderer()._renderer.tostring_argb()
         qImage = QtGui.QImage(stringBuffer, width, height, QtGui.QImage.Format_ARGB32)
@@ -303,11 +306,11 @@ class FigureToolbar(matplotlib.backend_bases.NavigationToolbar2):
     reimplemented to call a callback specified at initialization. Thus the axes
     changes can be caught, and reflected in the XML-based plot properties.
     """
-        
+
     def __init__( self, canvas, callback=None):
         matplotlib.backend_bases.NavigationToolbar2.__init__( self, canvas )
         self.callback = callback
-        
+
     def _init_toolbar( self ):
         pass
 
@@ -320,7 +323,7 @@ class FigureToolbar(matplotlib.backend_bases.NavigationToolbar2):
         """
         from matplotlib.backends.backend_qt4 import cursord
         self.canvas.setCursor(QtGui.QCursor(cursord[cursor]))
-                
+
     def draw_rubberband( self, event, x0, y0, x1, y1 ):
         """Called by the base implementation to draw the zooming rectangle.
         The code has been taken from NavigationToolbar2QT.
@@ -331,15 +334,15 @@ class FigureToolbar(matplotlib.backend_bases.NavigationToolbar2):
         else:
             # MatPlotLib > 0.91.2
             height = self.canvas.figure.bbox.height
-            
         y1 = height - y1
         y0 = height - y0
-        
         w = abs(x1 - x0)
         h = abs(y1 - y0)
-
         rect = [int(val) for val in (min(x0,x1), min(y0, y1), w, h)]
-        self.canvas.drawRectangle( rect )
+        self.canvas.drawRectangle(rect)
+
+    def remove_rubberband(self):
+        self.canvas.drawRectangle(None)
 
     def draw(self):
         """Called by the base implementation (NavigationToolbar2) when axes
@@ -351,41 +354,11 @@ class FigureToolbar(matplotlib.backend_bases.NavigationToolbar2):
         """
         if self.callback is not None: self.callback()
 
-    def mouse_move(self, event):
-        """Called by the backend when the mouse cursor moves.
-        The code has been taken from the base implementation (NavigationToolbar2),
-        and adapted to respect the bounds of the axes rectangle.
-        """
-
-        if self._active=='ZOOM' and self._xypress:
-            x, y = event.x, event.y
-            lastx, lasty, a, ind, lim, trans= self._xypress[0]
-            
-            # The bit below is the only change from the base implementation.
-            # it guarantees that the selection rectangle cannot extend outside
-            # the axes rectangle.
-            bb = a.bbox
-            if not bb.contains(x,y):
-                if callable(bb.xmin):
-                    # MatPlotLib <= 0.91.2
-                    xmin,xmax,ymin,ymax = bb.xmin(),bb.xmax(),bb.ymin(),bb.ymax()
-                else:
-                    # MatPlotLib > 0.91.2
-                    xmin,xmax,ymin,ymax = bb.xmin,  bb.xmax,  bb.ymin,  bb.ymax
-                if   x<xmin: x = xmin
-                elif x>xmax: x = xmax
-                if   y<ymin: y = ymin
-                elif y>ymax: y = ymax
-                event = matplotlib.backend_bases.MouseEvent(event.name, event.canvas, x, y,
-                                   event.button, event.key,
-                                   guiEvent=event.guiEvent)
-        return matplotlib.backend_bases.NavigationToolbar2.mouse_move(self,event)
-
 class FigurePanel(QtWidgets.QWidget):
     """This widget contains a MatPlotLib canvas that hosts a figure, plus a toolbar
     that allows for figure zooming, panning, printing, exporting, etc.
     """
-    
+
     def __init__(self,parent,detachbutton=True,reportnodata=True):
         QtWidgets.QWidget.__init__(self,parent)
 
@@ -398,7 +371,7 @@ class FigurePanel(QtWidgets.QWidget):
         self.canvas.afterResize.connect(self.afterCanvasResize)
 
         # Create our figure that encapsulates MatPlotLib figure.
-        deffont = getFontSubstitute(unicode(self.fontInfo().family()))
+        deffont = getFontSubstitute(u''.__class__(self.fontInfo().family()))
         self.figure = plot.Figure(self.mplfigure,defaultfont=deffont)
         self.figure.registerCallback('completeStateChange',self.onFigureStateChanged)
 
@@ -489,7 +462,7 @@ class FigurePanel(QtWidgets.QWidget):
         self.onAxesRangeChanged()
         self.updateWidthFromProperties()
         self.updateHeightFromProperties()
-        
+
     def onFigurePropertyChanged(self,node,feature):
         """Called when one customized figure property changes.
         Currently used to enable/disable the "Reset view" button.
@@ -503,7 +476,7 @@ class FigurePanel(QtWidgets.QWidget):
                 self.updateHeightFromProperties()
             self.onAxesRangeChanged()
         self.blockevents = False
-        
+
     def onAxesRangeChanged(self):
         """Enables/disables the "Reset View" button, based on whether the
         current axes bounds have been customized by the user.
@@ -589,7 +562,7 @@ class FigurePanel(QtWidgets.QWidget):
             self.dialogAdvanced.resizeColumns()
         self.dialogAdvanced.show()
         self.dialogAdvanced.activateWindow()
-        
+
     def loadProperties(self,path):
         oldroot = self.figure.properties.root
         data = plot.FigureProperties()
@@ -606,7 +579,7 @@ class FigurePanel(QtWidgets.QWidget):
                 child.copyFrom(newchild)
         data.unlink()
         self.figure.setUpdating(oldupdating)
-        
+
     def onZoomClicked(self,*args):
         """Called when the user clicks the "Zoom" button.
         """
@@ -622,7 +595,7 @@ class FigurePanel(QtWidgets.QWidget):
         bounds of the figure axes have been changed with the zoom
         functionality, but [supposedly] before the MatPlotLib figue has
         been redrawn.
-        
+
         The new axes bounds are taken from the MatPltoLib figure, and
         used to change the explicit axes bounds in our attached Figure.
         This implicitly forces a redraw of the figure.
@@ -719,7 +692,7 @@ class FigurePanel(QtWidgets.QWidget):
         fname,selectedFilter = QtWidgets.QFileDialog.getSaveFileNameAndFilter(self,'Choose location to save plot to','',filters,selectedFilter)
         if not fname: return
         
-        selectedFilter = unicode(selectedFilter)
+        selectedFilter = u''.__class__(selectedFilter)
         exportercls = filter2exportercls[selectedFilter]
 
         exporter = exportercls(self.figure)
@@ -730,17 +703,17 @@ class FigurePanel(QtWidgets.QWidget):
 
         QtWidgets.qApp.setOverrideCursor(QtCore.Qt.WaitCursor)
         try:
-            exporter.export(unicode(fname),filter2format[selectedFilter])
+            exporter.export(u''.__class__(fname),filter2format[selectedFilter])
         finally:
             QtWidgets.qApp.restoreOverrideCursor()
-        
+
     def onPrint(self):
         """Called when the user clicks the "Print..." button.
         """
         printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
         printDialog = QtPrintSupport.QPrintDialog(printer, self)
         if printDialog.exec_()!=QtWidgets.QDialog.Accepted: return
-        
+
         QtWidgets.qApp.setOverrideCursor(QtCore.Qt.WaitCursor)
 
         canvas = self.canvas.switch_backends(FigureCanvasAgg)
@@ -770,7 +743,7 @@ class FigurePanel(QtWidgets.QWidget):
             # is in a 4 byte unsigned int.  little endian system is LSB first
             # and expects the bytes in reverse order (bgra).
             if (QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian):
-                stringBuffer = canvas.renderer._renderer.tostring_bgra()
+                stringBuffer = canvas.renderer._renderer.buffer_rgba()
             else:
                 stringBuffer = canvas.renderer._renderer.tostring_argb()
             qImage = QtGui.QImage(stringBuffer, canvas.renderer.width, canvas.renderer.height, QtGui.QImage.Format_ARGB32)
@@ -995,7 +968,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
         self.resize(750, 450)
 
         self.first = True
-        
+
         self.progressdialog = QtWidgets.QProgressDialog('',None,0,0,self,QtCore.Qt.Dialog|QtCore.Qt.CustomizeWindowHint|QtCore.Qt.WindowTitleHint)
         self.progressdialog.setModal(True)
         self.progressdialog.setMinimumDuration(0)
@@ -1003,7 +976,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
         self.progressdialog.setWindowTitle('Parsing data file...')
 
         if title is not None: self.setWindowTitle(title)
-        
+
     def insertAction(self,panel,before,string,icon=None,target=None):
         if target is None:
             target = icon
@@ -1012,16 +985,16 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
         act.triggered.connect(target)
         panel.toolbar.insertAction(before,act)
         return act
-        
+
     def onTabChanged(self,newtab):
         pass
         #if self.dlgEditFunction is not None: self.dlgEditFunction.hide()
-        
+
     def onEditData(self):
-        dialog = LinkedFileDataEditor(self.linkedfile,self,title='Edit %s' % unicode(self.windowTitle()).lower())
+        dialog = LinkedFileDataEditor(self.linkedfile,self,title='Edit %s' % u''.__class__(self.windowTitle()).lower())
         if dialog.exec_()!=QtWidgets.QDialog.Accepted: return
         self.setData()
-        
+
     def getCurrentVariable(self):
         """Returns the currently selected (visible) variable.
         """
@@ -1029,7 +1002,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
         varnames = self.linkedfile.getVariableNames()
         if len(varnames)>1: i = self.tabs.currentIndex()
         return self.privatestore.getVariable(varnames[i])
-        
+
     def onEditFunction(self):
         if self.dlgEditFunction is None:
             self.dlgEditFunction = FunctionVariableEditor(self,QtCore.Qt.Tool)
@@ -1039,7 +1012,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
         self.dlgEditFunction.setVariable(variable)
         self.dlgEditFunction.show()
         self.dlgEditFunction.activateWindow()
-        
+
     def onApplyFunction(self):
         variable = self.getCurrentVariable()
         if not isinstance(variable,common.FunctionVariable):
@@ -1141,12 +1114,12 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
     def onImport(self):
         dir = ''
         if self.datasourcedir is not None: dir = self.datasourcedir.get('')
-        path,filter = QtWidgets.QFileDialog.getOpenFileNameAndFilter(self,'',dir,'')
-        path = unicode(path)
+        path, filter = QtWidgets.QFileDialog.getOpenFileNameAndFilter(self,'',dir,'')
+        path = u''.__class__(path)
 
         # If the browse dialog was cancelled, just return.
         if path=='': return
-        
+
         # Store the data source directory
         if self.datasourcedir is not None:
             self.datasourcedir.set(os.path.dirname(path))
@@ -1164,14 +1137,14 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
 
     def onExport(self):
         path,filter = QtWidgets.QFileDialog.getSaveFileNameAndFilter(self,'','','')
-        path = unicode(path)
-        
+        path = u''.__class__(path)
+
         # If the browse dialog was cancelled, just return.
         if path=='': return
 
         # Save data file.
         self.linkedfile.saveToFile(path)
-            
+
     def destroy(self):
         for panel in self.panels: panel.destroy()
         QtWidgets.QDialog.destroy(self)
@@ -1212,7 +1185,7 @@ class FunctionVariableEditor(QtWidgets.QWidget):
             
     def apply(self,target):
         target.clearFunctions()
-        target.addFunction(unicode(self.edit.text()))
+        target.addFunction(u''.__class__(self.edit.text()))
         target.setVectorized(bool(self.checkVectorized.isChecked()))
 
 class LinkedFileDataEditor(QtWidgets.QDialog):

@@ -43,7 +43,13 @@ class ExpressionNamespace(DictMixin):
             if name in table:
                 return table[name]
         raise KeyError('"%s" does not exist in namespace' % name)
-        
+
+    def __len__(self):
+        return len(self.keys())
+
+    def __iter__(self):
+        return iter(self.keys())
+
 class LazyStore(DictMixin):
     """The light-weight object encapsulates a VariableStore, from which children
     (variables and child stores) can be obtained as attributes (__getattr__) or by indexing
@@ -87,6 +93,12 @@ class LazyStore(DictMixin):
         res |= set(self.store.getVariableNames())
         res |= set(self.store.children.keys())
         return list(res)
+
+    def __len__(self):
+        return len(self.keys())
+
+    def __iter__(self):
+        return iter(self.keys())
 
 class LazyExpression(object):
     """The light-weight class is the base class for objects that are meant to be used in
@@ -149,10 +161,11 @@ class LazyExpression(object):
             LazyExpression.globalfuncs['max' ].usefirstunit = True
             LazyExpression.globalfuncs['sum' ].usefirstunit = True
 
-            import functions
+
+            from . import functions
             for name in dir(functions):
                 LazyExpression.globalfuncs[name] = LazyExpression.NamedFunction(name,getattr(functions,name),useslices=True)
-                
+
         return LazyExpression.globalfuncs
 
     @staticmethod
@@ -164,10 +177,10 @@ class LazyExpression(object):
         for i in range(len(baseshape)-1,-1,-1):
             if isinstance(slic[i],slice):
                 # For non-integer slices we do not know the resulting shape
-                if not (isinstance(slic[i].start,(int,types.NoneType)) and isinstance(slic[i].stop,(int,types.NoneType))): return None
+                if not (isinstance(slic[i].start,(int,type(None))) and isinstance(slic[i].stop,(int,type(None)))): return None
 
                 start,stop,step = slic[i].indices(baseshape[i])
-                baseshape[i] = (stop-start-1)/step+1
+                baseshape[i] = (stop-start-1)//step+1
             else:
                 curshape = getShape(slic[i])
                 if curshape is None or len(curshape)>0:
@@ -723,7 +736,7 @@ class LazySlice(LazyOperation):
         self.slice = slic
         self.simpleslices = True
         for sl in self.slice:
-            if not (sl is Ellipsis or isinstance(sl,int) or (isinstance(sl,slice) and isinstance(sl.start,(int,types.NoneType)) and isinstance(sl.stop,(int,types.NoneType)) and isinstance(sl.step,(int,types.NoneType)))):
+            if not (sl is Ellipsis or isinstance(sl,int) or (isinstance(sl,slice) and isinstance(sl.start,(int,type(None))) and isinstance(sl.stop,(int,type(None))) and isinstance(sl.step,(int,type(None))))):
                 self.simpleslices = False
                 break
         self.canprocessslice = self.simpleslices and variable.getShape() is not None

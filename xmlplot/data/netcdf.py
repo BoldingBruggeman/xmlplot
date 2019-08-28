@@ -707,7 +707,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                 # Floating point value or other non-integer object provided as index.
                 boundindices.append(slice(0,shape[idim]))
                 floatindices.append(idim)
-            elif not (isinstance(bound.start,(int,types.NoneType)) and isinstance(bound.stop,(int,types.NoneType))):
+            elif not (isinstance(bound.start,(int,type(None))) and isinstance(bound.stop,(int,type(None)))):
                 # Non-integer slice specification (e.g., using floating point numbers or datetime objects).
                 assert bound.step is None,'Non-integer slices with explicitly specified step are not supported.'
                 boundindices.append(slice(0,shape[idim]))
@@ -1187,7 +1187,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                     curdims = list(v.dimensions)
                     return cmp(curdims.index(x),curdims.index(y))
             return 0
-        ncdims.sort(cmp=cmpdims)
+        #ncdims.sort(cmp=cmpdims)
         return ncdims
 
     def getDimensionLength(self,dimname):

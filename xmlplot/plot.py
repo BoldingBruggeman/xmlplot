@@ -29,7 +29,7 @@ class Exporter(BaseExporter):
 <element name="Settings">
   <element name="Width"      label="width"      type="float" unit="cm"/>
   <element name="Height"     label="height"     type="float" unit="cm"/>
-  <element name="Resolution" label="resolution" type="int"   unit="dpi"/>
+  <element name="Resolution" label="resolution" type="int"   unit="dpi" minInclusive="0" />
 </element>
     """
     
@@ -55,10 +55,11 @@ class Exporter(BaseExporter):
     def export(self,path,format):
         """Export the contents of the figure to file.
         """
+        path = u''.__class__(path)
         width  = self.properties['Width' ].getValue(usedefault=True)/2.54
         height = self.properties['Height'].getValue(usedefault=True)/2.54
         dpi    = self.properties['Resolution'].getValue(usedefault=True)
-        
+
         # Restore original figure dimensions.
         oldwidth  = self.source.figure.get_figwidth()
         oldheight = self.source.figure.get_figheight()
@@ -66,11 +67,11 @@ class Exporter(BaseExporter):
         self.source.figure.set_figheight(height)
 
         # Save the figure to file.
-        fmt = os.path.splitext(unicode(path))[1][1:].lower()
+        fmt = os.path.splitext(path)[1][1:].lower()
         possibleexts = self.getFileTypes(self.source)[format]
         if fmt not in possibleexts: fmt = possibleexts[0]
-        self.source.canvas.print_figure(unicode(path),dpi=dpi,facecolor='w',edgecolor='w',orientation='portrait',format=fmt)
-        
+        self.source.canvas.print_figure(path,dpi=dpi,facecolor='w',edgecolor='w',orientation='portrait',format=fmt)
+
         # Restore original figure dimensions.
         self.source.figure.set_figwidth (oldwidth)
         self.source.figure.set_figheight(oldheight)
@@ -793,12 +794,12 @@ class Figure(xmlstore.util.referencedobject):
         if height is not None: self.figure.set_figheight(height)
 
         # Save the figure to file.
-        self.canvas.print_figure(unicode(path),dpi=dpi,facecolor='w',edgecolor='w',orientation='portrait')
-        
+        self.canvas.print_figure(u''.__class__(path),dpi=dpi,facecolor='w',edgecolor='w',orientation='portrait')
+
         # Restore original figure dimensions.
         if width  is not None: self.figure.set_figwidth (self['Width'].getValue(usedefault=True)/2.54)
         if height is not None: self.figure.set_figheight(self['Height'].getValue(usedefault=True)/2.54)
-        
+
     def copyFrom(self,sourcefigure):
         """Copies all plot properties and data sources from the supplied source figure.
         """
@@ -1193,7 +1194,7 @@ class Figure(xmlstore.util.referencedobject):
             seriesinfo.append(info)
             
         # Remove unused dimensions (recognizable by the lack of attributes such as "datatype")
-        for axisname in axis2data.keys():
+        for axisname in tuple(axis2data.keys()):
             if 'datatype' not in axis2data[axisname]: del axis2data[axisname]
 
         def getrange(seriesinfo,axis):
@@ -2040,11 +2041,11 @@ class Figure(xmlstore.util.referencedobject):
             cbp = cbp.from_bounds(cbp.x0,p.y0,cbp.width,p.height)
             self.colorbar.ax.set_position(cbp)
             if redraw: self.canvas.draw()
-        
+
 def setLineProperties(propertynode,mplsection='lines',**kwargs):
     """Sets the values under a xmlstore.TypedStore node describing line
     properties all at once.
-    
+
     Internal use only. Used to quickly set default line properties.
     """
     deflinewidth = matplotlib.rcParams[mplsection+'.linewidth']
@@ -2056,50 +2057,56 @@ def setLineProperties(propertynode,mplsection='lines',**kwargs):
     defmarkersize = matplotlib.rcParams.get(mplsection+'.markersize',6.)
     defedgewidth = matplotlib.rcParams.get(mplsection+'.markeredgewidth',0.5)
     defedgecolor = matplotlib.rcParams.get(mplsection+'.markeredgecolor','black')
+    if defedgecolor == 'auto':
+        defedgecolor = 'k'
     defedgecolor = matplotlib.colors.colorConverter.to_rgb(defedgecolor)
     defedgecolor = xmlstore.datatypes.Color.fromNormalized(*defedgecolor)
 
     propertynode['CanHaveMarker'].setValue(kwargs.get('CanHaveMarker',True))
-    
+
     line = propertynode['Line']
     line.setValue(kwargs.get('LineStyle',deflinestyle))
     line['Width'].setValue(kwargs.get('LineWidth',deflinewidth))
     line['Color'].setValue(kwargs.get('Color',deflinecolor))
-    
+
     marker = propertynode['Marker']
     marker.setValue(kwargs.get('MarkerType',''))
     marker['Size'].setValue(kwargs.get('MarkerSize',defmarkersize))
     marker['FaceColor'].setValue(kwargs.get('MarkerFaceColor',deflinecolor))
     marker['EdgeColor'].setValue(kwargs.get('MarkerEdgeColor',defedgecolor))
     marker['EdgeWidth'].setValue(kwargs.get('MarkerEdgeWidth',defedgewidth))
-    
+
 def getLineProperties(propertynode):
     """Returns a dictionary with line properties based on the specified
     xmlstore.TypedStore node.
-    
+
     Internal use only.
     """
-    marker = propertynode['Marker']
-    markertype = marker.getValue(usedefault=True)
-    
     line = propertynode['Line']
     linestyle = line.getValue(usedefault=True)
-    
     linewidth = line['Width'].getValue(usedefault=True)
     color = line['Color'].getValue(usedefault=True)
-    markersize = marker['Size'].getValue(usedefault=True)
-    markerfacecolor = marker['FaceColor'].getValue(usedefault=True)
-    markeredgecolor = marker['EdgeColor'].getValue(usedefault=True)
-    markeredgewidth = marker['EdgeWidth'].getValue(usedefault=True)
-    
-    return {'linestyle':linestyle,
+
+    result = {
+        'linestyle':linestyle,
+        'linewidth':linewidth,
+        'color':color.getNormalized()
+    }
+    if propertynode['CanHaveMarker'].getValue(usedefault=True):
+        marker = propertynode['Marker']
+        markertype = marker.getValue(usedefault=True)
+        markersize = marker['Size'].getValue(usedefault=True)
+        markerfacecolor = marker['FaceColor'].getValue(usedefault=True)
+        markeredgecolor = marker['EdgeColor'].getValue(usedefault=True)
+        markeredgewidth = marker['EdgeWidth'].getValue(usedefault=True)
+        result.update({
             'marker':markertype,
-            'linewidth':linewidth,
-            'color':color.getNormalized(),
             'markersize':markersize,
             'markerfacecolor':markerfacecolor.getNormalized(),
             'markeredgecolor':markeredgecolor.getNormalized(),
-            'markeredgewidth':markeredgewidth}
+            'markeredgewidth':markeredgewidth
+        })
+    return result
 
 def setFontProperties(node,family=None,size=8,style='normal',weight=400):
     node['Family'].setValue(family)
