@@ -811,10 +811,10 @@ class FigureDialog(QtWidgets.QDialog):
     beforeDestroy = QtCore.Signal(object)
     
     def __init__(self,parent=None,varstore=None,varname=None,sourcefigure=None,figureproperties=None,quitonclose=False,closebutton=None,destroyonclose=True):
-        QtWidgets.QDialog.__init__(self,parent,QtCore.Qt.Window | QtCore.Qt.WindowMaximizeButtonHint | QtCore.Qt.WindowSystemMenuHint )
+        QtWidgets.QDialog.__init__(self,parent,QtCore.Qt.Window | QtCore.Qt.WindowMaximizeButtonHint | QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowCloseButtonHint )
 
         if closebutton is None: closebutton = xmlstore.gui_qt4.needCloseButton()
-        
+
         self.setSizeGripEnabled(True)
         layout = QtWidgets.QVBoxLayout(self)
         self.panel = FigurePanel(self,detachbutton=False)
@@ -837,7 +837,7 @@ class FigureDialog(QtWidgets.QDialog):
             # Nothing provided; figure will be empty.
             assert varstore is None and varname is None,'If a variable is to be plotted, both the variable store and the variable name must be provided.'
         self.panel.figure.setUpdating(True)
-        
+
         if closebutton: self.panel.toolbar.addAction(getIcon('exit.png'),'Close',self.accept)
 
         title = self.panel.figure['Title'].getValue(usedefault=True)
@@ -846,7 +846,7 @@ class FigureDialog(QtWidgets.QDialog):
 
         # Prevent this window from keeping the application alive after the main window was closed.
         self.setAttribute(QtCore.Qt.WA_QuitOnClose,quitonclose)
-        
+
         self.destroyonclose = destroyonclose
 
         self.resize(500, 500)
