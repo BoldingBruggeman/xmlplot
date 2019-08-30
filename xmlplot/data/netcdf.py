@@ -1573,7 +1573,7 @@ class NetCDFStore_GOTM(NetCDFStore):
                         slc[izdim] = start
                     else:
                         slc[izdim] = slice(start,stop)
-                    return array[slc]
+                    return array[tuple(slc)]
 
                 mask = numpy.ma.nomask
                 data = {}
