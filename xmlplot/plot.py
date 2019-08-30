@@ -1848,8 +1848,8 @@ class Figure(xmlstore.util.referencedobject):
                 
             # Make sure forced ranges are valid if log transform is applied.
             if axisnode['LogScale'].getValue(usedefault=True):
-                if forcedrange[0]<=0: forcedrange[0] = None
-                if forcedrange[1]<=0: forcedrange[1] = None
+                if forcedrange[0] is not None and forcedrange[0] <= 0: forcedrange[0] = None
+                if forcedrange[1] is not None and forcedrange[1] <= 0: forcedrange[1] = None
             
             # Effective range used by data, after taking forced range into account.
             effdatarange = axisdata['datarange'][:]
