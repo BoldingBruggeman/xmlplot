@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='xmlplot',
-      version='0.9.12',
+      version='0.9.13',
       description=' --- update - ',
       long_description=readme(),
       url='http://github.com/BoldingBruggeman/xmlplot',
@@ -28,5 +28,5 @@ setup(name='xmlplot',
       packages=['xmlplot', 'xmlplot/data'],
       package_data={'xmlplot': ['icons/*', 'schemas/*/*']}, 
       include_package_data=True,
-      install_requires=['xmlstore>=0.9.6', 'numpy', 'matplotlib'],
+      install_requires=['xmlstore>=0.9.7', 'numpy', 'matplotlib'],
       zip_safe=False)
