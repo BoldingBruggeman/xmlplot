@@ -456,26 +456,28 @@ def interpolateEdges(data,dims=None):
     that lie adjacent to non-mask cells.
     """
     oldmask = numpy.ma.getmask(data)
-    if oldmask is numpy.ma.nomask: return data
-    if dims is None: dims = range(data.ndim)
+    if oldmask is numpy.ma.nomask:
+        return data
+    if dims is None:
+        dims = range(data.ndim)
     oldnonmask = numpy.logical_not(oldmask)
     data = data.filled(0.)
-    maskcount = numpy.array(oldnonmask,dtype=numpy.int)
+    maskcount = numpy.array(oldnonmask, dtype=numpy.int)
     newdata = data.copy()
-    baseslice = [slice(None)]*data.ndim
+    baseslice = [slice(None)] * data.ndim
     for i in dims:
-        sl1,sl2 = list(baseslice),list(baseslice)
-        sl1[i] = slice(1,None)
-        sl2[i] = slice(0,-1)
-        newdata  [sl1] += data[sl2]
-        maskcount[sl1] += oldnonmask[sl2]
-        newdata  [sl2] += data[sl1]
-        maskcount[sl2] += oldnonmask[sl1]
-    newmask = maskcount==0
+        sl1, sl2 = list(baseslice), list(baseslice)
+        sl1[i] = slice(1, None)
+        sl2[i] = slice(0, -1)
+        newdata  [sl1] += data[tuple(sl2)]
+        maskcount[sl1] += oldnonmask[tuple(sl2)]
+        newdata  [sl2] += data[tuple(sl1)]
+        maskcount[sl2] += oldnonmask[tuple(sl1)]
+    newmask = maskcount == 0
     maskcount[newmask] = 1
     newdata /= maskcount
     data[oldmask] = newdata[oldmask]
-    return numpy.ma.masked_where(newmask,data,copy=False)
+    return numpy.ma.masked_where(newmask, data, copy=False)
     
 def getboundindices(data,axis,minval=None,maxval=None):
     """Returns the indices for the specified axis that envelope (i.e., lie just outside)
