@@ -469,10 +469,10 @@ def interpolateEdges(data,dims=None):
         sl1, sl2 = list(baseslice), list(baseslice)
         sl1[i] = slice(1, None)
         sl2[i] = slice(0, -1)
-        newdata  [sl1] += data[tuple(sl2)]
-        maskcount[sl1] += oldnonmask[tuple(sl2)]
-        newdata  [sl2] += data[tuple(sl1)]
-        maskcount[sl2] += oldnonmask[tuple(sl1)]
+        newdata  [tuple(sl1)] += data[tuple(sl2)]
+        maskcount[tuple(sl1)] += oldnonmask[tuple(sl2)]
+        newdata  [tuple(sl2)] += data[tuple(sl1)]
+        maskcount[tuple(sl2)] += oldnonmask[tuple(sl1)]
     newmask = maskcount == 0
     maskcount[newmask] = 1
     newdata /= maskcount
