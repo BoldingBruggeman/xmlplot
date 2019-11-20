@@ -707,7 +707,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                 # Floating point value or other non-integer object provided as index.
                 boundindices.append(slice(0,shape[idim]))
                 floatindices.append(idim)
-            elif not (isinstance(bound.start,(int,type(None))) and isinstance(bound.stop,(int,type(None)))):
+            elif not (isinstance(bound.start, (int, type(None))) and isinstance(bound.stop, (int, type(None)))):
                 # Non-integer slice specification (e.g., using floating point numbers or datetime objects).
                 assert bound.step is None,'Non-integer slices with explicitly specified step are not supported.'
                 boundindices.append(slice(0,shape[idim]))
@@ -725,16 +725,16 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
             # Get the entire coordinate array
             coordvar = self.store.getVariable_raw(dimname)
             coorddims = list(coordvar.getDimensions())
-            coords = coordvar.getSlice([boundindices[dimnames.index(cd)] for cd in coorddims], dataonly=True, cache=True)
-            istart,istop = xmlplot.common.getboundindices(coords,coorddims.index(dimname),bounds[idim].start,bounds[idim].stop)
-            boundindices[idim] = slice(istart,istop,1)
+            coords = coordvar.getSlice(tuple([boundindices[dimnames.index(cd)] for cd in coorddims]), dataonly=True, cache=True)
+            istart,istop = xmlplot.common.getboundindices(coords, coorddims.index(dimname), bounds[idim].start, bounds[idim].stop)
+            boundindices[idim] = slice(int(istart), int(istop), 1)
 
           # Translate indices based on non-integer values (e.g. floating point values, dates)
           # to integer indices.
           if floatindices:
             floatdimnames = [dimnames[idim] for idim in floatindices]
             newshape = [shape[idim] for idim in floatindices]
-            summeddistance = numpy.zeros(newshape,dtype=numpy.float)
+            summeddistance = numpy.zeros(newshape, dtype=numpy.float)
             for idim in floatindices:
               bound = bounds[idim]
               if isinstance(bound,datetime.datetime): bound = xmlplot.common.date2num(bound)
@@ -744,8 +744,8 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
               for cd in coorddims:
                   assert cd in dimnames,'Coordinate %s depends on %s, but the variable %s itself does not depend on %s.' % (dimname,cd,self.getName(),cd)
                   assert cd in floatdimnames,'A float index is provided for dimension %s, but not for dimension %s on which %s depends.' % (dimname,cd,dimname)
-              coords = coordvar.getSlice([boundindices[dimnames.index(cd)] for cd in coorddims], dataonly=True, cache=True)
-              coords = xmlplot.common.broadcastSelective(coords,coorddims,newshape,floatdimnames)
+              coords = coordvar.getSlice(tuple([boundindices[dimnames.index(cd)] for cd in coorddims]), dataonly=True, cache=True)
+              coords = xmlplot.common.broadcastSelective(coords, coorddims, newshape, floatdimnames)
               summeddistance += numpy.abs(coords-bound)
             indices = numpy.unravel_index(summeddistance.argmin(), newshape)
             for idim,index in zip(floatindices,indices): boundindices[idim] = index

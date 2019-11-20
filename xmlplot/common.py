@@ -1029,13 +1029,13 @@ class Variable(object):
             del newdims[idimension]
             target.dimensions = tuple(newdims)
             return target
-            
+
         def __getitem__(self,slic):
             # Check whether the slice argument contains only integers and slice objects,
             # and build an array with slices for staggered coordinates.
             if not isinstance(slic,(list,tuple)): slic = (slic,)
             assert len(slic)==self.data.ndim, 'Number of slices (%i) does not match number of variable dimensions (%i).' % (len(slic),self.data.ndim)
-            
+
             cslice_stag = []
             for i,s in enumerate(slic):
                 assert isinstance(s,(int,slice)),'The slice argument for dimension %s is not an integer or slice object (but %s). Fancy indexing with arrays of integers or booleans is not yet supported.' % (self.dimensions[i],str(s))
@@ -1045,7 +1045,8 @@ class Variable(object):
                     cslice_stag.append(slice(start,stop+1))
                 else:
                     cslice_stag.append(s)
-        
+            cslice_stag = tuple(cslice_stag)
+
             # Obtain sliced dimensions and coordinates
             dims,coords,coords_stag = [],[],[]
             for i in range(len(self.dimensions)):
@@ -1059,7 +1060,7 @@ class Variable(object):
                         cur_cslice_stag = cslice_stag[i]
                     coords.append(self.coords[i].__getitem__(cur_cslice))
                     coords_stag.append(self.coords_stag[i].__getitem__(cur_cslice_stag))
-            
+
             # Build and return the new Variable.Slice object
             newslice = Variable.Slice(dims,coords=coords,coords_stag=coords_stag)
             newslice.data = self.data.__getitem__(slic)

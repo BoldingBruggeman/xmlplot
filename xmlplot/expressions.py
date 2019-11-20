@@ -284,7 +284,7 @@ class LazyExpression(object):
                 
             # Apply remaining slices (if any)
             if slic:
-                slic = [slic.get(dim,slice(None)) for dim in dims]
+                slic = tuple([slic.get(dim,slice(None)) for dim in dims])
                 res = res.__getitem__(slic)
                 
             return res
