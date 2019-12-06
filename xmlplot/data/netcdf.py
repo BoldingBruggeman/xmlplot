@@ -869,8 +869,8 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
               # Determine the expected shape of the returned data.
               expectedshape = []
               for b in bounds:
-                if isinstance(b,slice):
-                    expectedshape.append((b.stop-b.start-1)/b.step+1)
+                if isinstance(b, slice):
+                    expectedshape.append((b.stop - b.start - 1) // b.step + 1)
               expectedshape = tuple(expectedshape)
               
               # netCDF4 pre 2010-07-12 incorrectly neglects to squeeze out singleton dimension of scalars.
