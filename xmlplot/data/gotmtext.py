@@ -274,9 +274,9 @@ class LinkedFileVariableStore(xmlplot.common.VariableStore,xmlstore.datatypes.Da
             assert self.data is not None, 'getDataFile called with both the data file and the data in memory are not set.'
         
             # Data not present as data file object. Create one in memory on the spot.
-            target = io.StringIO()
-            self.writeData(target,callback=callback)
-            self.datafile = xmlstore.datatypes.DataFileMemory(target.getvalue(),self.filename+'.dat')
+            target = io.BytesIO()
+            self.writeData(io.TextIOWrapper(target, encoding='ascii'), callback=callback)
+            self.datafile = xmlstore.datatypes.DataFileMemory(target.getvalue(), self.filename+'.dat')
             target.close()
         return self.datafile.addref()
         
@@ -537,7 +537,7 @@ class LinkedMatrix(LinkedFileVariableStore):
         if dimcount==1:
             # One coordinate dimension present; get the data type of that dimension.
             dimdata = data[0]
-            dimtype = self.dimensions.values()[0]['datatype']
+            dimtype = list(self.dimensions.values())[0]['datatype']
             dimisdate = (dimtype=='datetime')
             if dimisdate: dimdata = xmlplot.common.num2date(dimdata)
         varcount = len(self.vardata)

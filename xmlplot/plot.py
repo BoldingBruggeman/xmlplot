@@ -1,6 +1,9 @@
 from __future__ import print_function
 
-import math,os.path,xml.dom.minidom
+import math
+import os.path
+import xml.dom.minidom
+import copy
 
 import matplotlib, matplotlib.colors, matplotlib.dates, matplotlib.font_manager, matplotlib.ticker
 import numpy
@@ -910,6 +913,7 @@ class Figure(xmlstore.util.referencedobject):
         # Obtain the currently selected colormap, and make sure NaNs are plotted as white.
         cmdict,cmlist = getColorMaps()
         cm = cmdict[self.properties['ColorMap'].getValue(usedefault=True)]
+        cm = copy.copy(cm)  # to avoid MatplotlibDeprecationWarning
         cm.set_bad('k',alpha=0.0)
                 
         # Start with z order index 0 (incrementing it with every item added)

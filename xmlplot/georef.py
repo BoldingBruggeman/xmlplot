@@ -1,7 +1,7 @@
 from __future__ import print_function
 import os.path
 import zipfile
-import StringIO
+import io
 
 # NumPy
 import numpy
@@ -27,7 +27,7 @@ import plot
 import xmlstore
 
 debug = False
-                
+
 class GeoRefExporter(plot.BaseExporter):
     propertyxml = """<?xml version="1.0"?>
 <element name="Settings">
@@ -58,7 +58,7 @@ class GeoRefExporter(plot.BaseExporter):
 
         # No need to auto-update when we change properties - we will explicitly call draw when required.
         self.source.setUpdating(False)
-        
+
     @classmethod
     def getFileTypes(cls,source):
         filetypes = {}
@@ -76,17 +76,17 @@ class GeoRefExporter(plot.BaseExporter):
         self.source['Map/DrawStates'].setValue(False)
         self.source['Map/DrawParallels'].setValue(False)
         self.source['Map/DrawMeridians'].setValue(False)
-    
+
         widthpx = self.properties['Width'].getValue(usedefault=True)
-    
+
         self.source.draw()
-        
+
         self.figure.set_facecolor('None')
         self.figure.set_edgecolor('None')
         self.figure.set_dpi(self.dpi)
-        
+
         axesfillfigure = True
-        
+
         if self.source.colorbar is not None:
             if self.properties['ShowColorBar'].getValue(usedefault=True):
                 axesfillfigure = False
@@ -98,7 +98,7 @@ class GeoRefExporter(plot.BaseExporter):
         self.figure.gca().patch.set_visible(False)
         self.figure.gca().set_frame_on(False)
         self.figure.gca().set_title('')
-        
+
         # Calculate effective aspect ratio
         xmin,xmax,ymin,ymax = self.getAxesRanges()
         aspect = (ymax-ymin)/(xmax-xmin)
@@ -114,23 +114,23 @@ class GeoRefExporter(plot.BaseExporter):
         ymin,ymax = ax.get_ylim()
         xrange = xmax-xmin
         yrange = ymax-ymin
-        
+
         axesbox = self.figure.gca().get_position()
         w,h = axesbox.width,axesbox.height
         xmin -=     axesbox.xmin /float(w)*xrange
         xmax += (1.-axesbox.xmax)/float(w)*xrange
         ymin -=     axesbox.ymin /float(h)*yrange
         ymax += (1.-axesbox.ymax)/float(h)*yrange
-        
+
         return xmin,xmax,ymin,ymax
-        
+
     def export(self,path,format):
         assert format in ('GeoTIFF','Keyhole Markup Language'), 'Unknown export format "%s" requested.' % format
         if format=='GeoTIFF':
             self.exportGeoTiff(path)
         else:
             self.exportKml(path)
-        
+
     def exportGeoTiff(self,path):
         self.draw()
 
@@ -139,7 +139,7 @@ class GeoRefExporter(plot.BaseExporter):
             print('Drawing image in memory...')
         self.source.canvas.draw()
         widthpx,heightpx = map(int,self.source.canvas.renderer.get_canvas_width_height())
-        buffer = self.source.canvas.renderer._renderer.buffer_rgba(0,0)
+        buffer = self.source.canvas.renderer.buffer_rgba(0,0)
         arr = numpy.frombuffer(buffer,numpy.uint8)  # This should create a view on the buffer, rather than a copy of the data
         arr.shape = heightpx,widthpx,4
         if debug:
@@ -156,7 +156,7 @@ class GeoRefExporter(plot.BaseExporter):
         # Note that the y offset is the maximum y value, and [correspondingly] the y dimension is always negative.
         tf = [ xmin, (xmax-xmin)/widthpx, 0, ymax, 0, (ymin-ymax)/heightpx]
         dst_ds.SetGeoTransform(tf)
-            
+
         # Determine spatial reference system [map projection]
         srs = osr.SpatialReference()
         if self.source.basemap.projection=='cyl':
@@ -167,7 +167,7 @@ class GeoRefExporter(plot.BaseExporter):
             # Convert Proj.4 string returned by basemap to a SpatialReference object
             proj4 = self.source.basemap.srs
             srs.ImportFromProj4(proj4)
-            
+
         # Set map projection
         wkt = srs.ExportToWkt()
         dst_ds.SetProjection(wkt)
@@ -184,21 +184,21 @@ class GeoRefExporter(plot.BaseExporter):
     def exportKml(self,path):
         # KML only supports one projection.
         self.source['Map/Projection'].setValue('cyl')
-        
+
         # Build up the figure.
         self.draw()
-        
+
         # Create KMZ file (ZIP container)
         out = zipfile.ZipFile(path,'w',zipfile.ZIP_DEFLATED)
-    
+
         # Get map extent
         xmin,xmax,ymin,ymax = self.getAxesRanges()
-        
+
         title = self.source['Title'].getValue(usedefault=True)
 
         # Image file name
         imgpath = 'img.png'
-        
+
         # Create the KML string.
         strkml = """<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
@@ -216,18 +216,18 @@ class GeoRefExporter(plot.BaseExporter):
         </LatLonBox>
     </GroundOverlay>
 </kml>""" % (title,imgpath,ymax,ymin,xmax,xmin)
-        
+
         # Save the KML string to the KMZ (ZIP) container.
         out.writestr('doc.kml',strkml)
 
         # Save the in-memory figure to the KMZ (ZIP) container.
-        fpng = StringIO.StringIO()
+        fpng = io.BytesIO()
         self.source.canvas.print_figure(fpng,dpi=self.dpi,facecolor='None',edgecolor='None',orientation='portrait')
         out.writestr(imgpath,fpng.getvalue())
         fpng.close()
 
         # Close the KMZ (ZIP) container.
         out.close()
-        
+
 if hasbasemap:
     plot.Figure.registerExporter('geo-referenced image file',GeoRefExporter)

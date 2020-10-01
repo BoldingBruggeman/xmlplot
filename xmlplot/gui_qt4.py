@@ -125,9 +125,9 @@ class ColorMapEditor(xmlstore.gui_qt4.StringWithImageEditor):
         axes.imshow(a,aspect='auto',cmap=cm,origin='lower')
         ColorMapEditor.canvas.draw()
         if QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian:
-            stringBuffer = ColorMapEditor.canvas.get_renderer()._renderer.buffer_rgba()
+            stringBuffer = ColorMapEditor.canvas.get_renderer().buffer_rgba()
         else:
-            stringBuffer = ColorMapEditor.canvas.get_renderer()._renderer.tostring_argb()
+            stringBuffer = ColorMapEditor.canvas.get_renderer().tostring_argb()
         qImage = QtGui.QImage(stringBuffer, width, height, QtGui.QImage.Format_ARGB32)
         qPixMap = QtGui.QPixmap.fromImage(qImage)
 
@@ -181,9 +181,9 @@ class MarkerTypeEditor(xmlstore.gui_qt4.StringWithImageEditor):
         MarkerTypeEditor.canvas.get_renderer().clear()
         MarkerTypeEditor.canvas.draw()
         if QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian:
-            stringBuffer = MarkerTypeEditor.canvas.get_renderer()._renderer.buffer_rgba()
+            stringBuffer = MarkerTypeEditor.canvas.get_renderer().buffer_rgba()
         else:
-            stringBuffer = MarkerTypeEditor.canvas.get_renderer()._renderer.tostring_argb()
+            stringBuffer = MarkerTypeEditor.canvas.get_renderer().tostring_argb()
         qImage = QtGui.QImage(stringBuffer, width, height, QtGui.QImage.Format_ARGB32)
         return QtGui.QPixmap.fromImage(qImage)
 
@@ -229,9 +229,9 @@ class LineStyleEditor(xmlstore.gui_qt4.StringWithImageEditor):
         LineStyleEditor.canvas.get_renderer().clear()
         LineStyleEditor.canvas.draw()
         if QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian:
-            stringBuffer = LineStyleEditor.canvas.get_renderer()._renderer.buffer_rgba()
+            stringBuffer = LineStyleEditor.canvas.get_renderer().buffer_rgba()
         else:
-            stringBuffer = LineStyleEditor.canvas.get_renderer()._renderer.tostring_argb()
+            stringBuffer = LineStyleEditor.canvas.get_renderer().tostring_argb()
         qImage = QtGui.QImage(stringBuffer, width, height, QtGui.QImage.Format_ARGB32)
         return QtGui.QPixmap.fromImage(qImage)
 
@@ -243,14 +243,15 @@ class LinkedFileEditor(xmlstore.gui_qt4.AbstractPropertyEditor, QtWidgets.QWidge
     """
     def __init__(self,parent,node,fileprefix=None,datasourcedir=None,autoopen=False,**kwargs):
         QtWidgets.QWidget.__init__(self, parent)
+        xmlstore.gui_qt4.AbstractPropertyEditor.__init__(self, parent, node)
 
         lo = QtWidgets.QHBoxLayout()
-        
+
         self.title = node.getText(detail=1,capitalize=True)
         self.linkedfile = None
         self.datasourcedir = datasourcedir
         self.autoopen = autoopen
-        
+
         if autoopen: return
 
         if fileprefix is None: fileprefix = self.title
@@ -261,14 +262,14 @@ class LinkedFileEditor(xmlstore.gui_qt4.AbstractPropertyEditor, QtWidgets.QWidge
         self.setLayout(lo)
 
         self.plotbutton.clicked.connect(self.onPlot)
-        
+
     def showEvent(self,ev):
         if self.autoopen: self.onPlot()
 
     def setValue(self,value):
         if self.linkedfile is not None: self.linkedfile.release()
         self.linkedfile = value.addref()
-        
+
     def value(self):
         return self.linkedfile.addref()
 
@@ -321,8 +322,7 @@ class FigureToolbar(matplotlib.backend_bases.NavigationToolbar2):
         """Called by the base implementation to change the mouse cursor.
         The code has been taken from NavigationToolbar2QT.
         """
-        from matplotlib.backends.backend_qt4 import cursord
-        self.canvas.setCursor(QtGui.QCursor(cursord[cursor]))
+        self.canvas.setCursor(QtGui.QCursor(mpl_backend_qt4.cursord[cursor]))
 
     def draw_rubberband( self, event, x0, y0, x1, y1 ):
         """Called by the base implementation to draw the zooming rectangle.
@@ -745,9 +745,9 @@ class FigurePanel(QtWidgets.QWidget):
             # is in a 4 byte unsigned int.  little endian system is LSB first
             # and expects the bytes in reverse order (bgra).
             if (QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian):
-                stringBuffer = canvas.renderer._renderer.buffer_rgba()
+                stringBuffer = canvas.renderer.buffer_rgba()
             else:
-                stringBuffer = canvas.renderer._renderer.tostring_argb()
+                stringBuffer = canvas.renderer.tostring_argb()
             qImage = QtGui.QImage(stringBuffer, canvas.renderer.width, canvas.renderer.height, QtGui.QImage.Format_ARGB32)
 
             # Find the position where to start drawing (in order to center the figure on page)
