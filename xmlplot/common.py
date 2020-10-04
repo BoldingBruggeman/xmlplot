@@ -638,7 +638,7 @@ class VariableStore(DictMixin):
                 lazyvar.name = '%s[\'%s\']' % (defaultchild,varname)
                 defaultvars[varname] = lazyvar
             namespace.append(defaultvars)
-            
+
         # Evaluate the expression
         try:
             result = expressions.VariableExpression.resolve(expression,namespace)
@@ -646,7 +646,7 @@ class VariableStore(DictMixin):
             #raise Exception('Unable to resolve expression "%s" to a valid data object. Global table contains: %s. Error: %s' % (expression,', '.join(sorted(namespace.keys())),e))
             raise Exception('Unable to resolve expression "%s" to a valid data object. Error: %s' % (expression,e))
         return result
-                
+
     def getVariableNames(self,alllevels=False):
         """Returns a list of short names for all variables present in the store.
         """
@@ -654,6 +654,7 @@ class VariableStore(DictMixin):
             varnames = self.rawlabels.keys()
         else:
             varnames = self.getVariableNames_raw()
+        varnames = list(varnames)
         for childname,child in self.children.items():
             if isinstance(child,Variable):
                 varnames.append(childname)
@@ -668,7 +669,7 @@ class VariableStore(DictMixin):
         for childname,child in self.children.items():
             if isinstance(child,Variable): varnames.append(childname)
         return varnames
-        
+
     def getPlottableVariableNames_raw(self):
         """Returns a list of original short names for all variables that can be plotted.
         Derived classes should implement this method if they want to exclude certain

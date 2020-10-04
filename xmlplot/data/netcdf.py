@@ -73,7 +73,7 @@ def enumerateNetCDFModules():
     if ready:
         oldscientific = False
         try:
-            version = map(int,Scientific.__version__.split('.')[:2])
+            version = tuple(map(int,Scientific.__version__.split('.')[:2]))
             oldscientific = version[0]<2 or (version[0]==2 and version[1]<7)
         except: pass
         if not oldscientific and selectednetcdfmodule==-1: selectednetcdfmodule = len(netcdfmodules)

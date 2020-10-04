@@ -717,7 +717,7 @@ class LinkedProfilesInTime(LinkedFileVariableStore):
             curdate = xmlplot.common.date2num(curdate)
 
             # Get the number of observations and the depth direction.
-            (depthcount,updown) = map(int, line[19:].split())
+            depthcount, updown = map(int, line[19:].split())
 
             # Create arrays that will contains depths and observed values.
             depthdatatype = self.dimensions[self.dimensionorder[1]]['datatype']
