@@ -310,11 +310,11 @@ def replicateCoordinates(coords,data,idim):
     assert coords.ndim==1, 'Coordinate array must be one-dimensional.'
     assert coords.shape[0]==data.shape[idim], 'Length of coordinate vector (%i) and specified dimension in data array (%i) must match.' % (coords.shape[0],data.shape[idim])
     newcoords = numpy.empty(data.shape,coords.dtype)
-    tp = range(newcoords.ndim)
+    tp = list(range(newcoords.ndim))
     tp.append(tp.pop(idim))
     newcoords = newcoords.transpose(tp)
     newcoords[:] = coords
-    tp = range(newcoords.ndim)
+    tp = list(range(newcoords.ndim))
     tp.insert(idim,tp.pop())
     return newcoords.transpose(tp)
 

@@ -1500,7 +1500,7 @@ class Figure(xmlstore.util.referencedobject):
                         xerr = None
                         yerr = numpy.vstack((varslice.data-lbound,ubound-varslice.data))
                         if switchaxes: xerr,yerr = yerr,xerr
-                        axes.errorbar(X,Y,fmt=None,xerr=xerr,yerr=yerr,ecolor=plotargs['color'],zorder=zorder)
+                        axes.errorbar(X,Y,fmt='none',xerr=xerr,yerr=yerr,ecolor=plotargs['color'],zorder=zorder)
                     elif errorbartype==2:
                         # Plot shaded confidence area (filled polygon)
                         errX = numpy.hstack((varslice.coords[0],varslice.coords[0][::-1]))

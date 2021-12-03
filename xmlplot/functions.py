@@ -18,23 +18,23 @@ class statistics(expressions.LazyFunction):
         expressions.LazyFunction.__init__(self,self.__class__.__name__,None,sourceslice,axis,centermeasure=centermeasure,boundsmeasure=boundsmeasure,percentilewidth=percentilewidth,output=output)
         self.setRemovedDimension(1,'axis')
         self.usefirstunit = True
-    
+
     def _getValue(self,resolvedargs,resolvedkwargs,dataonly=False):
         sourceslice,axis = resolvedargs[0],resolvedargs[1]
-    
+
         centermeasure = resolvedkwargs['centermeasure']
         boundsmeasure = resolvedkwargs['boundsmeasure']
         percentilewidth = resolvedkwargs['percentilewidth']
         output = resolvedkwargs['output']
-    
+
         if isinstance(axis, (str, u''.__class__)):
             dims = sourceslice.dimensions
             assert axis in dims,'Specified axis "%s" does not exist. Available: %s.' % (axis,', '.join(dims))
             axis = list(dims).index(axis)
-            
+
         # Create new slice to hold source data.
         slc = sourceslice.removeDimension(axis,inplace=False)
-        
+
         # Calculate weights from the mesh widths of the dimension to calculate statistics for.
         weights = sourceslice.coords_stag[axis]
         sourceslice.data = numpy.ma.asarray(sourceslice.data)
@@ -50,18 +50,18 @@ class statistics(expressions.LazyFunction):
                     wl = weights[inds]
                     inds[idim] = slice(0, length-1)
                     weights = 0.5*(wl+weights[inds])
-        
+
         # Normalize weights so their sum over the dimension to analyze equals one
         summedweights = numpy.ma.array(weights,mask=sourceslice.data.mask,copy=False).sum(axis=axis)
         newshape = list(summedweights.shape)
         newshape.insert(axis,1)
         weights /= summedweights.reshape(newshape).repeat(sourceslice.data.shape[axis],axis)
-        
+
         if (output<2 and centermeasure==0) or (output!=1 and boundsmeasure==0):
             # We need the mean and/or standard deviation. Calculate the mean,
             # which is needed for either measure.
             mean = (sourceslice.data*weights).sum(axis=axis)
-        
+
         if (output<2 and centermeasure==1) or (output!=1 and boundsmeasure==1) or (output>1 and centermeasure==1 and boundsmeasure==0):
             # We will need percentiles. Sort the data along dimension to analyze,
             # and calculate cumulative (weigth-based) distribution.
@@ -71,15 +71,15 @@ class statistics(expressions.LazyFunction):
             sortedindices = sourceslice.data.argsort(axis=axis,fill_value=numpy.Inf)
             sorteddata    = common.argtake(sourceslice.data,sortedindices,axis=axis)
             sortedweights = common.argtake(weights,sortedindices,axis)
-            
+
             # Calculate cumulative distribution values along dimension to analyze.
             cumsortedweights = sortedweights.cumsum(axis=axis)
-            
+
             # Calculate coordinates for interfaces between data points, to be used
             # as grid for cumulative distribution
             sorteddata = (numpy.ma.concatenate((sorteddata.take((0,),axis=axis),sorteddata),axis=axis) + numpy.ma.concatenate((sorteddata,sorteddata.take((-1,),axis=axis)),axis=axis))/2.
             cumsortedweights = numpy.concatenate((numpy.zeros(cumsortedweights.take((0,),axis=axis).shape,cumsortedweights.dtype),cumsortedweights),axis=axis)
-        
+
         if output<2 or boundsmeasure==0:
             # We need the center measure
             if centermeasure==0:
@@ -119,7 +119,7 @@ class statistics(expressions.LazyFunction):
             slc.data = ubound
         else:
             assert False, 'Unknown choice %i for output variable.' % boundsmeasure
-            
+
         if dataonly: return slc.data
         return slc
 
@@ -132,7 +132,7 @@ class flatten(expressions.LazyFunction):
     def _getValue(self,resolvedargs,resolvedkwargs,dataonly=False):
         sourceslice,axis = resolvedargs[0],resolvedargs[1]
         targetaxis = resolvedkwargs['targetaxis']
-            
+
         dims = list(sourceslice.dimensions)
         if isinstance(axis, (str, u''.__class__)):
             assert axis in dims,'Specified axis "%s" does not exist. Available: %s.' % (axis,', '.join(dims))

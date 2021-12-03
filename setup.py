@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='xmlplot',
-      version='0.9.21',
+      version='0.9.22',
       description=' --- update - ',
       long_description=readme(),
       url='http://github.com/BoldingBruggeman/xmlplot',
