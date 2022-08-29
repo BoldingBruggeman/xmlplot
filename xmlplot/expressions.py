@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 try:
-    from collections import Mapping as DictMixin
+    from collections.abc import Mapping as DictMixin
 except ImportError:
     from UserDict import DictMixin
 import types

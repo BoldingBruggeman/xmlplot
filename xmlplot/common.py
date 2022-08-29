@@ -3,7 +3,7 @@ from __future__ import print_function
 # Import modules from standard Python library
 import sys,os.path,re,xml.dom.minidom,datetime
 try:
-    from collections import Mapping as DictMixin
+    from collections.abc import Mapping as DictMixin
 except ImportError:
     from UserDict import DictMixin
 
