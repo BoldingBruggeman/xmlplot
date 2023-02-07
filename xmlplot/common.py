@@ -141,7 +141,7 @@ def getMergedMask(*sources):
     mask = None
     def addmask(mask,newmask):
         if mask is None:
-            mask = numpy.empty(shape,dtype=numpy.bool)
+            mask = numpy.empty(shape,dtype=bool)
             mask[...] = newmask
         else:
             mask |= newmask
