@@ -1582,7 +1582,7 @@ class NetCDFStore_GOTM(NetCDFStore):
                 def setmask(mask,newmask):
                     if mask is numpy.ma.nomask:
                         # Create new depth mask based on provided mask, allowing for broadcasting.
-                        mask = numpy.empty(shape,dtype=numpy.bool)
+                        mask = numpy.empty(shape,dtype=bool)
                         mask[...] = newmask
                     else:
                         # Combine provided mask with existing one.
