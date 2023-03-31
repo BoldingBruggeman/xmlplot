@@ -734,7 +734,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
           if floatindices:
             floatdimnames = [dimnames[idim] for idim in floatindices]
             newshape = [shape[idim] for idim in floatindices]
-            summeddistance = numpy.zeros(newshape, dtype=numpy.float)
+            summeddistance = numpy.zeros(newshape, dtype=float)
             for idim in floatindices:
               bound = bounds[idim]
               if isinstance(bound,datetime.datetime): bound = xmlplot.common.date2num(bound)
@@ -779,7 +779,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                 else:
                     l = 1
                 newshape.append(l)
-            data = numpy.empty(newshape,dtype=numpy.float)
+            data = numpy.empty(newshape,dtype=float)
             data = numpy.ma.array(data,mask=True,copy=False)
                 
             addborders = []
@@ -911,7 +911,7 @@ class NetCDFStore(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                 # No coordinate variable available: auto-generate integers from 0 to dimension length-1.
                 if not isinstance(bounds[idim],slice): continue
                 coorddims = (dimnames[idim],)
-                coords = numpy.arange(bounds[idim].start,bounds[idim].stop,bounds[idim].step,dtype=numpy.float)
+                coords = numpy.arange(bounds[idim].start,bounds[idim].stop,bounds[idim].step,dtype=float)
                 
             # Get the list of coordinate dimensions after the ones with single index have been sliced out.
             newcoorddims = [cd for cd in coorddims if isinstance(bounds[dimnames.index(cd)],slice)]

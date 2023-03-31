@@ -224,8 +224,8 @@ def interp1_get_weights(allx,X,axis=0):
 
     # Create arrays to hold upper indices and weights for linear interpolation.
     newxshape = list(allx.shape[:-1])+[X.shape[0]]
-    alliX     = numpy.empty(newxshape,numpy.int)
-    allw_high = numpy.ones (newxshape,numpy.float)
+    alliX     = numpy.empty(newxshape,int)
+    allw_high = numpy.ones (newxshape,float)
     
     for ind in numpy.ndindex(*allx.shape[:-1]):
         xind = tuple(list(ind)+[slice(None)])
@@ -462,7 +462,7 @@ def interpolateEdges(data,dims=None):
         dims = range(data.ndim)
     oldnonmask = numpy.logical_not(oldmask)
     data = data.filled(0.)
-    maskcount = numpy.array(oldnonmask, dtype=numpy.int)
+    maskcount = numpy.array(oldnonmask, dtype=int)
     newdata = data.copy()
     baseslice = [slice(None)] * data.ndim
     for i in dims:
@@ -1310,7 +1310,7 @@ class FunctionVariable(DeferredVariable):
             functions.append((condition,function))
             
         # Create empty array for holding data
-        data = numpy.empty(grid[0].shape,numpy.float)
+        data = numpy.empty(grid[0].shape,float)
         
         # Build base namespace with NumPy functions.
         namespace = dict([(m,getattr(numpy,m)) for m in dir(numpy)])

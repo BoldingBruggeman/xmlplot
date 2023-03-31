@@ -262,12 +262,12 @@ class iter(expressions.LazyFunction):
             start,stop,step = slcs[self.idimension],slcs[self.idimension]+1,1
             inewdim = None
         
-        data = numpy.ma.empty(newshape,dtype=numpy.float)
+        data = numpy.ma.empty(newshape,dtype=float)
         if not dataonly:
             result = common.Variable.Slice(newdims)
             for j in range(len(newshape)):
-                result.coords[j] = numpy.empty(newshape,dtype=numpy.float)
-                result.coords_stag[j] = numpy.empty([l+1 for l in newshape],dtype=numpy.float)
+                result.coords[j] = numpy.empty(newshape,dtype=float)
+                result.coords_stag[j] = numpy.empty([l+1 for l in newshape],dtype=float)
             result.data = data
         i = start
         while i<stop:

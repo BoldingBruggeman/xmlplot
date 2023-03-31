@@ -82,8 +82,8 @@ class HDF4Store(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
             # Determine scale factor and offset, and cast data to acommodating type if needed.
             scale  = self.hdfvar.attributes().get('scale_factor',None)
             offset = self.hdfvar.attributes().get('add_offset',  None)
-            if scale is not None or offset is not None and dat.dtype!=numpy.float:
-                dat = dat.astype(numpy.float)
+            if scale is not None or offset is not None and dat.dtype!=float:
+                dat = dat.astype(float)
             if scale  is not None: dat *= scale
             if offset is not None: dat += offset
 
@@ -101,7 +101,7 @@ class HDF4Store(xmlplot.common.VariableStore,xmlstore.util.referencedobject):
                     # No coordinate variable available: use indices
                     if not isinstance(bound,slice): continue
                     coorddims = [dimname]
-                    coords = numpy.arange(bound.start,bound.stop,bound.step,dtype=numpy.float)
+                    coords = numpy.arange(bound.start,bound.stop,bound.step,dtype=float)
                 else:
                     # Coordinate variable present: use it.
                     coorddims = list(coordvar.getDimensions())
