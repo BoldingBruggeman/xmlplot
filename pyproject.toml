@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "xmlplot"
 version = "0.9.28"
+readme = "README.md"
 dependencies = [
   "xmlstore>=0.9.13",
   "numpy",
