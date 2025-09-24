@@ -122,14 +122,12 @@ class ColorMapEditor(xmlstore.gui_qt4.StringWithImageEditor):
             ColorMapEditor.figure.set_size_inches(width,height)
             axes = ColorMapEditor.figure.gca()
         a = numpy.outer(numpy.ones(2),numpy.arange(0,1,1./width))
-        axes.imshow(a,aspect='auto',cmap=cm,origin='lower')
+        im = axes.imshow(a,aspect='auto',cmap=cm,origin='lower')
         ColorMapEditor.canvas.draw()
-        if QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian:
-            stringBuffer = ColorMapEditor.canvas.get_renderer().buffer_rgba()
-        else:
-            stringBuffer = ColorMapEditor.canvas.get_renderer().tostring_argb()
-        qImage = QtGui.QImage(stringBuffer, width, height, QtGui.QImage.Format_ARGB32)
+        renderer = ColorMapEditor.canvas.get_renderer()
+        qImage = QtGui.QImage(renderer.buffer_rgba(), renderer.width, renderer.height, QtGui.QImage.Format_RGBA8888)
         qPixMap = QtGui.QPixmap.fromImage(qImage)
+        im.remove()
 
         # Add border
         p = QtGui.QPainter(qPixMap)
@@ -180,11 +178,8 @@ class MarkerTypeEditor(xmlstore.gui_qt4.StringWithImageEditor):
         axes.plot((0.5,),(0.5,),marker=value,markersize=0.45*height*72/dpi,markeredgecolor='k',markerfacecolor='k')
         MarkerTypeEditor.canvas.get_renderer().clear()
         MarkerTypeEditor.canvas.draw()
-        if QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian:
-            stringBuffer = MarkerTypeEditor.canvas.get_renderer().buffer_rgba()
-        else:
-            stringBuffer = MarkerTypeEditor.canvas.get_renderer().tostring_argb()
-        qImage = QtGui.QImage(stringBuffer, width, height, QtGui.QImage.Format_ARGB32)
+        renderer = MarkerTypeEditor.canvas.get_renderer()
+        qImage = QtGui.QImage(renderer.buffer_rgba(), renderer.width, renderer.height, QtGui.QImage.Format_RGBA8888)
         return QtGui.QPixmap.fromImage(qImage)
 
 xmlstore.gui_qt4.registerEditor('markertype',MarkerTypeEditor)
@@ -228,11 +223,8 @@ class LineStyleEditor(xmlstore.gui_qt4.StringWithImageEditor):
         axes.plot((0.,1.),(0.5,0.5),linestyle=value,linewidth=1.,color='k')
         LineStyleEditor.canvas.get_renderer().clear()
         LineStyleEditor.canvas.draw()
-        if QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian:
-            stringBuffer = LineStyleEditor.canvas.get_renderer().buffer_rgba()
-        else:
-            stringBuffer = LineStyleEditor.canvas.get_renderer().tostring_argb()
-        qImage = QtGui.QImage(stringBuffer, width, height, QtGui.QImage.Format_ARGB32)
+        renderer = LineStyleEditor.canvas.get_renderer()
+        qImage = QtGui.QImage(renderer.buffer_rgba(), renderer.width, renderer.height, QtGui.QImage.Format_RGBA8888)
         return QtGui.QPixmap.fromImage(qImage)
 
 xmlstore.gui_qt4.registerEditor('linestyle',LineStyleEditor)
@@ -744,11 +736,7 @@ class FigurePanel(QtWidgets.QWidget):
             # qImage wants to put the bytes into argb format and
             # is in a 4 byte unsigned int.  little endian system is LSB first
             # and expects the bytes in reverse order (bgra).
-            if (QtCore.QSysInfo.ByteOrder == QtCore.QSysInfo.LittleEndian):
-                stringBuffer = canvas.renderer.buffer_rgba()
-            else:
-                stringBuffer = canvas.renderer.tostring_argb()
-            qImage = QtGui.QImage(stringBuffer, canvas.renderer.width, canvas.renderer.height, QtGui.QImage.Format_ARGB32)
+            qImage = QtGui.QImage(canvas.renderer.buffer_rgba(), canvas.renderer.width, canvas.renderer.height, QtGui.QImage.Format_RGBA8888)
 
             # Find the position where to start drawing (in order to center the figure on page)
             pagerect = printer.pageRect()
