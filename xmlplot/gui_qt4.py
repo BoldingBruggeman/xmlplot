@@ -703,11 +703,11 @@ class FigurePanel(QtWidgets.QWidget):
             dialog = ExportSettings(exporter.properties,self)
             if dialog.exec_()!=QtWidgets.QDialog.Accepted: return
 
-        QtWidgets.qApp.setOverrideCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         try:
             exporter.export(u''.__class__(fname),filter2format[selectedFilter])
         finally:
-            QtWidgets.qApp.restoreOverrideCursor()
+            QtWidgets.QApplication.restoreOverrideCursor()
 
     def onPrint(self):
         """Called when the user clicks the "Print..." button.
@@ -716,7 +716,7 @@ class FigurePanel(QtWidgets.QWidget):
         printDialog = QtPrintSupport.QPrintDialog(printer, self)
         if printDialog.exec_()!=QtWidgets.QDialog.Accepted: return
 
-        QtWidgets.qApp.setOverrideCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
 
         canvas = self.canvas.switch_backends(FigureCanvasAgg)
 
@@ -772,7 +772,7 @@ class FigurePanel(QtWidgets.QWidget):
             # Restore original canvas.
             self.figure.figure.set_canvas(self.canvas)
 
-            QtWidgets.qApp.restoreOverrideCursor()
+            QtWidgets.QApplication.restoreOverrideCursor()
 
     def onDetach(self):
         """Called when the user clicks the "Detach" button. This opens
@@ -1111,7 +1111,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
             self.progressdialog.setValue(0)
             
         self.progressdialog.setLabelText(status)
-        QtWidgets.qApp.processEvents()
+        QtWidgets.QApplication.processEvents()
 
     def onImport(self):
         dir = ''
@@ -1501,12 +1501,12 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
             # No tooltip
             return None
     
-    class LinkedFileDelegate(QtWidgets.QItemDelegate):
+    class LinkedFileDelegate(QtWidgets.QStyledItemDelegate):
 
         def __init__(self,parent=None):
-            QtWidgets.QItemDelegate.__init__(self,parent)
+            QtWidgets.QStyledItemDelegate.__init__(self,parent)
 
-        # createEditor (inherited from QtWidgets.QItemDelegate)
+        # createEditor (inherited from QtWidgets.QStyledItemDelegate)
         #   Creates the editor widget for the model item at the given index
         def createEditor(self, parent, option, index):
             value = index.data(QtCore.Qt.EditRole)
@@ -1521,7 +1521,7 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
             
             return editor
             
-        # setEditorData (inherited from QtWidgets.QItemDelegate)
+        # setEditorData (inherited from QtWidgets.QStyledItemDelegate)
         #   Sets value in the editor widget, for the model item at the given index
         def setEditorData(self, editor,index):
             value = index.data(QtCore.Qt.EditRole)
@@ -1531,7 +1531,7 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
             else:
                 editor.setDateTime(value)
 
-        # setModelData (inherited from QtWidgets.QItemDelegate)
+        # setModelData (inherited from QtWidgets.QStyledItemDelegate)
         #   Obtains the value from the editor widget, and set it for the model item at the given index
         def setModelData(self, editor, model, index):
             if isinstance(editor,xmlstore.gui_qt4.ScientificDoubleEditor):

@@ -12,7 +12,7 @@ from matplotlib import cbook
 
 from xmlstore.qt_compat import QtGui,QtCore,QtWidgets,qt4_backend
 
-if qt4_backend in ('PyQt5', 'PySide2'):
+if qt4_backend in ('PyQt5', 'PySide2', 'PySide6'):
     from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as _FigureCanvasQTAgg
     from matplotlib.backends.backend_qt5 import cursord
 else:

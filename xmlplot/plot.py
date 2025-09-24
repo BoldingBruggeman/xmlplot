@@ -88,7 +88,7 @@ def calculateContourLevels(cc,zmin,zmax,logscale=False):
 
     # Choose contours (code taken from matplotlib.contour.py, _autolev function)
     loc.create_dummy_axis()
-    loc.set_bounds(zmin, zmax)
+    loc.axis.set_view_interval(zmin, zmax)
     lev = loc()
     zmargin = (zmax - zmin) * 0.000001 # so z < (zmax + zmargin)
     if zmax >= lev[-1]:
@@ -1727,7 +1727,7 @@ class Figure(xmlstore.util.referencedobject):
                 urcrnrlat = nodemap['Range/UpperRightLatitude'].getValue(usedefault=True)
                 loc = matplotlib.ticker.MaxNLocator(8)
                 loc.create_dummy_axis()
-                loc.set_bounds(llcrnrlat, urcrnrlat)
+                loc.axis.set_view_interval(llcrnrlat, urcrnrlat)
                 lev = loc()
                 defaultnodemap['DrawParallels/Parallels'].setValue(tuple(lev))
                 defaultnodemap['DrawParallels/XOffset'].setValue((basemap.urcrnrx-basemap.llcrnrx)/100.)
@@ -1746,7 +1746,7 @@ class Figure(xmlstore.util.referencedobject):
                 urcrnrlon = nodemap['Range/UpperRightLongitude'].getValue(usedefault=True)
                 loc = matplotlib.ticker.MaxNLocator(8)
                 loc.create_dummy_axis()
-                loc.set_bounds(llcrnrlon, urcrnrlon)
+                loc.axis.set_view_interval(llcrnrlon, urcrnrlon)
                 lev = loc()
                 defaultnodemap['DrawMeridians/Meridians'].setValue(tuple(lev))
                 defaultnodemap['DrawMeridians/XOffset'].setValue((basemap.urcrnrx-basemap.llcrnrx)/100.)
@@ -1984,7 +1984,7 @@ class Figure(xmlstore.util.referencedobject):
                 if label!='': axes.set_ylabel(label,fontproperties=fontprops)
                 loc = matplotlib.ticker.MaxNLocator(7)
                 loc.create_dummy_axis()
-                loc.set_bounds(0, effrange[1])
+                loc.axis.set_view_interval(0, effrange[1])
                 radii = loc()[1:-1]
                 axes.set_rmax(effrange[1])
                 axes.set_rgrids(radii=radii, angle=axes.radii_angle)

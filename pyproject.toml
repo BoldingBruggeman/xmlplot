@@ -7,7 +7,7 @@ name = "xmlplot"
 dynamic = ["version"]
 readme = "README.md"
 dependencies = [
-  "xmlstore>=0.9.13",
+  "xmlstore>=0.9.15",
   "numpy",
   "matplotlib"
 ]
