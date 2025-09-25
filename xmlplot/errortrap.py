@@ -17,15 +17,15 @@ class ErrorReceiver(QtCore.QObject):
         """Custom class derived from QEvent, used only to contain a string (error message).
         """
         def __init__(self,error):
-            QtCore.QEvent.__init__(self,QtCore.QEvent.User)
+            QtCore.QEvent.__init__(self,QtCore.QEvent.Type.User)
             self.error = error
 
     def event(self,ev):
-        """Ignores all event except those of type QtCore.QEvent.User. Events of this type must
+        """Ignores all event except those of type QtCore.QEvent.Type.User. Events of this type must
         be objects of class ErrorEvent. Their contained string is passed to the ErrorDialog for
         display.
         """
-        if ev.type()==QtCore.QEvent.User:
+        if ev.type()==QtCore.QEvent.Type.User:
             ErrorDialog.postError(ev.error)
             return True
         return QtWidgets.QWidget.event(self,ev)
@@ -63,7 +63,7 @@ class ErrorDialog(QtWidgets.QWidget):
     
     def __init__(self,parent=None):
         if parent is None: parent = QtWidgets.QApplication.activeWindow()
-        QtWidgets.QWidget.__init__(self,parent,QtCore.Qt.Tool)
+        QtWidgets.QWidget.__init__(self,parent,QtCore.Qt.WindowType.Tool)
 
         self.labelStart = QtWidgets.QLabel('Errors occurred during execution of %s:' % ErrorDialog.appname,self)
         self.labelStart.setWordWrap(True)
@@ -72,7 +72,7 @@ class ErrorDialog(QtWidgets.QWidget):
         self.labelStop.setWordWrap(True)
 
         self.textedit = QtWidgets.QTextEdit(self)
-        self.textedit.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
+        self.textedit.setLineWrapMode(QtWidgets.QTextEdit.LineWrapMode.NoWrap)
         self.textedit.setReadOnly(True)
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.labelStart)
@@ -84,9 +84,9 @@ class ErrorDialog(QtWidgets.QWidget):
         self.resize(600, 200)
 
         if parent is not None:
-            self.setAttribute(QtCore.Qt.WA_QuitOnClose,False)
+            self.setAttribute(QtCore.Qt.WidgetAttribute.WA_QuitOnClose,False)
             
     def write(self,string):
         cur = self.textedit.textCursor()
-        cur.movePosition(QtGui.QTextCursor.End)
+        cur.movePosition(QtGui.QTextCursor.MoveOperation.End)
         cur.insertText(string)

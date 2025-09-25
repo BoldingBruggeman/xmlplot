@@ -98,6 +98,18 @@ class MapProjectionEditor(xmlstore.gui_qt4.SimpleSelectEditor):
 
 xmlstore.gui_qt4.registerEditor('mapprojection',MapProjectionEditor)
 
+def canvas_to_pixmap(canvas):
+    canvas.draw()
+    renderer = canvas.get_renderer()
+    buf = renderer.buffer_rgba()
+    if xmlstore.qt_compat.qt4_backend == "PyQt6":
+        from PyQt6 import sip
+        ptr = int(sip.voidptr(buf))
+    else:
+        ptr = buf
+    qImage = QtGui.QImage(ptr, int(renderer.width), int(renderer.height), QtGui.QImage.Format.Format_RGBA8888)
+    return QtGui.QPixmap.fromImage(qImage)
+
 class ColorMapEditor(xmlstore.gui_qt4.StringWithImageEditor):
     """Widget for choosing a colormap, suitable for use in MatPlotLib figures.
     """
@@ -123,10 +135,7 @@ class ColorMapEditor(xmlstore.gui_qt4.StringWithImageEditor):
             axes = ColorMapEditor.figure.gca()
         a = numpy.outer(numpy.ones(2),numpy.arange(0,1,1./width))
         im = axes.imshow(a,aspect='auto',cmap=cm,origin='lower')
-        ColorMapEditor.canvas.draw()
-        renderer = ColorMapEditor.canvas.get_renderer()
-        qImage = QtGui.QImage(renderer.buffer_rgba(), renderer.width, renderer.height, QtGui.QImage.Format_RGBA8888)
-        qPixMap = QtGui.QPixmap.fromImage(qImage)
+        qPixMap = canvas_to_pixmap(ColorMapEditor.canvas)
         im.remove()
 
         # Add border
@@ -177,10 +186,7 @@ class MarkerTypeEditor(xmlstore.gui_qt4.StringWithImageEditor):
         
         axes.plot((0.5,),(0.5,),marker=value,markersize=0.45*height*72/dpi,markeredgecolor='k',markerfacecolor='k')
         MarkerTypeEditor.canvas.get_renderer().clear()
-        MarkerTypeEditor.canvas.draw()
-        renderer = MarkerTypeEditor.canvas.get_renderer()
-        qImage = QtGui.QImage(renderer.buffer_rgba(), renderer.width, renderer.height, QtGui.QImage.Format_RGBA8888)
-        return QtGui.QPixmap.fromImage(qImage)
+        return canvas_to_pixmap(MarkerTypeEditor.canvas)
 
 xmlstore.gui_qt4.registerEditor('markertype',MarkerTypeEditor)
 
@@ -222,10 +228,7 @@ class LineStyleEditor(xmlstore.gui_qt4.StringWithImageEditor):
         
         axes.plot((0.,1.),(0.5,0.5),linestyle=value,linewidth=1.,color='k')
         LineStyleEditor.canvas.get_renderer().clear()
-        LineStyleEditor.canvas.draw()
-        renderer = LineStyleEditor.canvas.get_renderer()
-        qImage = QtGui.QImage(renderer.buffer_rgba(), renderer.width, renderer.height, QtGui.QImage.Format_RGBA8888)
-        return QtGui.QPixmap.fromImage(qImage)
+        return canvas_to_pixmap(LineStyleEditor.canvas)
 
 xmlstore.gui_qt4.registerEditor('linestyle',LineStyleEditor)
 
@@ -267,8 +270,8 @@ class LinkedFileEditor(xmlstore.gui_qt4.AbstractPropertyEditor, QtWidgets.QWidge
 
     def onPlot(self):
         dialog = LinkedFileEditorDialog(self.linkedfile,self,title=self.title,datasourcedir=self.datasourcedir)
-        ret = dialog.exec_()
-        if ret == QtWidgets.QDialog.Accepted:
+        ret = dialog.exec()
+        if ret == QtWidgets.QDialog.DialogCode.Accepted:
             self.linkedfile = dialog.linkedfile
             self.onPropertyEditingFinished(forceclose=True)
         dialog.destroy()
@@ -359,7 +362,7 @@ class FigurePanel(QtWidgets.QWidget):
 
         # Create MatPlotLib canvas (Qt-backend) attached to our MatPlotLib figure.
         self.canvas = mpl_backend_qt4.FigureCanvasQTAgg(self.mplfigure)
-        self.canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,QtWidgets.QSizePolicy.Expanding)
+        self.canvas.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding,QtWidgets.QSizePolicy.Policy.Expanding)
         self.canvas.afterResize.connect(self.afterCanvasResize)
 
         # Create our figure that encapsulates MatPlotLib figure.
@@ -382,12 +385,12 @@ class FigurePanel(QtWidgets.QWidget):
         
         self.errortext = QtWidgets.QLabel(self)
         self.errortext.setVisible(False)
-        self.errortext.setAlignment(QtCore.Qt.AlignTop)
+        self.errortext.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         self.errortext.setWordWrap(True)
         self.reportnodata = reportnodata
         
         self.toolbar = QtWidgets.QToolBar(self)
-        self.toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self.toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.toolbar.addAction(getIcon('configure.png'),'Properties...',self.onAdvancedClicked)
         self.toolbar.addSeparator()
         self.actZoom = self.toolbar.addAction(getIcon('viewmag.png'),'Zoom',self.onZoomClicked)
@@ -549,7 +552,7 @@ class FigurePanel(QtWidgets.QWidget):
         Currently this shows the figure properties dialog box.
         """
         if self.dialogAdvanced is None:
-            self.dialogAdvanced = xmlstore.gui_qt4.PropertyEditorDialog(self,self.figure.properties,title='Figure properties',loadsave=True,flags=QtCore.Qt.Tool,loadhook=self.loadProperties)
+            self.dialogAdvanced = xmlstore.gui_qt4.PropertyEditorDialog(self,self.figure.properties,title='Figure properties',loadsave=True,flags=QtCore.Qt.WindowType.Tool,loadhook=self.loadProperties)
             self.dialogAdvanced.resize(350, 300)
             self.dialogAdvanced.resizeColumns()
         self.dialogAdvanced.show()
@@ -637,7 +640,7 @@ class FigurePanel(QtWidgets.QWidget):
         
         class ExportSettings(QtWidgets.QDialog):
             def __init__(self,store,parent=None):
-                QtWidgets.QDialog.__init__(self,parent,QtCore.Qt.Dialog | QtCore.Qt.MSWindowsFixedSizeDialogHint | QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowSystemMenuHint)
+                QtWidgets.QDialog.__init__(self,parent,QtCore.Qt.WindowType.Dialog | QtCore.Qt.WindowType.MSWindowsFixedSizeDialogHint | QtCore.Qt.WindowType.WindowTitleHint | QtCore.Qt.WindowType.WindowSystemMenuHint)
                 
                 layout = QtWidgets.QVBoxLayout()
                 self.store = store
@@ -683,7 +686,7 @@ class FigurePanel(QtWidgets.QWidget):
         filters = ';;'.join(sorted(filters))
 
         # Show save file dialog box.
-        fname,selectedFilter = QtWidgets.QFileDialog.getSaveFileNameAndFilter(self,'Choose location to save plot to','',filters,selectedFilter)
+        fname,selectedFilter = QtWidgets.QFileDialog.getSaveFileName(self,'Choose location to save plot to','',filters,selectedFilter)
         if not fname: return
         
         selectedFilter = u''.__class__(selectedFilter)
@@ -693,9 +696,9 @@ class FigurePanel(QtWidgets.QWidget):
 
         if exporter.properties is not None:
             dialog = ExportSettings(exporter.properties,self)
-            if dialog.exec_()!=QtWidgets.QDialog.Accepted: return
+            if dialog.exec()!=QtWidgets.QDialog.DialogCode.Accepted: return
 
-        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
         try:
             exporter.export(u''.__class__(fname),filter2format[selectedFilter])
         finally:
@@ -706,9 +709,9 @@ class FigurePanel(QtWidgets.QWidget):
         """
         printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
         printDialog = QtPrintSupport.QPrintDialog(printer, self)
-        if printDialog.exec_()!=QtWidgets.QDialog.Accepted: return
+        if printDialog.exec()!=QtWidgets.QDialog.DialogCode.Accepted: return
 
-        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
 
         canvas = self.canvas.switch_backends(FigureCanvasAgg)
 
@@ -799,7 +802,7 @@ class FigureDialog(QtWidgets.QDialog):
     beforeDestroy = QtCore.Signal(object)
     
     def __init__(self,parent=None,varstore=None,varname=None,sourcefigure=None,figureproperties=None,quitonclose=False,closebutton=None,destroyonclose=True):
-        QtWidgets.QDialog.__init__(self,parent,QtCore.Qt.Window | QtCore.Qt.WindowMaximizeButtonHint | QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowCloseButtonHint )
+        QtWidgets.QDialog.__init__(self,parent,QtCore.Qt.WindowType.Window | QtCore.Qt.WindowType.WindowMaximizeButtonHint | QtCore.Qt.WindowType.WindowSystemMenuHint | QtCore.Qt.WindowType.WindowCloseButtonHint )
 
         if closebutton is None: closebutton = xmlstore.gui_qt4.needCloseButton()
 
@@ -833,7 +836,7 @@ class FigureDialog(QtWidgets.QDialog):
         self.setWindowTitle(title)
 
         # Prevent this window from keeping the application alive after the main window was closed.
-        self.setAttribute(QtCore.Qt.WA_QuitOnClose,quitonclose)
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_QuitOnClose,quitonclose)
 
         self.destroyonclose = destroyonclose
 
@@ -860,7 +863,7 @@ class FigureDialog(QtWidgets.QDialog):
 class LinkedFileEditorDialog(QtWidgets.QDialog):
 
     def __init__(self,linkedfile,parent=None,title=None,datasourcedir=None):
-        QtWidgets.QDialog.__init__(self,parent,QtCore.Qt.Dialog)
+        QtWidgets.QDialog.__init__(self,parent,QtCore.Qt.WindowType.Dialog)
 
         self.privatestore = common.VariableStore()
 
@@ -959,7 +962,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
 
         self.first = True
 
-        self.progressdialog = QtWidgets.QProgressDialog('',None,0,0,self,QtCore.Qt.Dialog|QtCore.Qt.CustomizeWindowHint|QtCore.Qt.WindowTitleHint)
+        self.progressdialog = QtWidgets.QProgressDialog('',None,0,0,self,QtCore.Qt.WindowType.Dialog|QtCore.Qt.WindowType.CustomizeWindowHint|QtCore.Qt.WindowType.WindowTitleHint)
         self.progressdialog.setModal(True)
         self.progressdialog.setMinimumDuration(0)
         self.progressdialog.setAutoReset(False)
@@ -982,7 +985,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
 
     def onEditData(self):
         dialog = LinkedFileDataEditor(self.linkedfile,self,title='Edit %s' % u''.__class__(self.windowTitle()).lower())
-        if dialog.exec_()!=QtWidgets.QDialog.Accepted: return
+        if dialog.exec()!=QtWidgets.QDialog.DialogCode.Accepted: return
         self.setData()
 
     def getCurrentVariable(self):
@@ -995,7 +998,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
 
     def onEditFunction(self):
         if self.dlgEditFunction is None:
-            self.dlgEditFunction = FunctionVariableEditor(self,QtCore.Qt.Tool)
+            self.dlgEditFunction = FunctionVariableEditor(self,QtCore.Qt.WindowType.Tool)
             self.dlgEditFunction.bnApply.clicked.connect(self.onApplyFunction)
         variable = self.getCurrentVariable()
         if not isinstance(variable,common.FunctionVariable): variable = None
@@ -1104,7 +1107,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
     def onImport(self):
         dir = ''
         if self.datasourcedir is not None: dir = self.datasourcedir.get('')
-        path, filter = QtWidgets.QFileDialog.getOpenFileNameAndFilter(self,'',dir,'')
+        path, filter = QtWidgets.QFileDialog.getOpenFileName(self,'',dir,'')
         path = u''.__class__(path)
 
         # If the browse dialog was cancelled, just return.
@@ -1126,7 +1129,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
         memdf.release()
 
     def onExport(self):
-        path,filter = QtWidgets.QFileDialog.getSaveFileNameAndFilter(self,'','','')
+        path,filter = QtWidgets.QFileDialog.getSaveFileName(self,'','','')
         path = u''.__class__(path)
 
         # If the browse dialog was cancelled, just return.
@@ -1140,7 +1143,7 @@ class LinkedFileEditorDialog(QtWidgets.QDialog):
         QtWidgets.QDialog.destroy(self)
 
 class FunctionVariableEditor(QtWidgets.QWidget):
-    def __init__(self,parent=None,flags=QtCore.Qt.Widget):
+    def __init__(self,parent=None,flags=QtCore.Qt.WindowType.Widget):
         QtWidgets.QWidget.__init__(self,parent,flags)
         self.variable = None
         
@@ -1269,8 +1272,8 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
                 colcount += self.datamatrix.shape[1]
             return colcount
 
-        def data(self,index,role=QtCore.Qt.DisplayRole):
-            if role==QtCore.Qt.DisplayRole or role==QtCore.Qt.EditRole:
+        def data(self,index,role=QtCore.Qt.ItemDataRole.DisplayRole):
+            if role==QtCore.Qt.ItemDataRole.DisplayRole or role==QtCore.Qt.ItemDataRole.EditRole:
                 rowindex = index.row()
                 colindex = index.column()
                 if self.rowlabels is not None: colindex -= 1
@@ -1282,7 +1285,7 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
                 else:
                     val = self.datamatrix[rowindex,colindex]
 
-                if role==QtCore.Qt.DisplayRole:
+                if role==QtCore.Qt.ItemDataRole.DisplayRole:
                     if isinstance(val,datetime.datetime):
                         val = xmlstore.util.formatDateTime(val)
                     else:
@@ -1297,13 +1300,13 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
                 
             return None
             
-        def setData(self,index,value,role=QtCore.Qt.EditRole):
+        def setData(self,index,value,role=QtCore.Qt.ItemDataRole.EditRole):
             # Only do something if we are editing the data.
-            if role!=QtCore.Qt.EditRole: return True
+            if role!=QtCore.Qt.ItemDataRole.EditRole: return True
             
             # Convert the new value from variant to native data type.
             if isinstance(value,QtCore.QDateTime):
-                value.setTimeSpec(QtCore.Qt.UTC)
+                value.setTimeSpec(QtCore.Qt.TimeSpec.UTC)
                 value = common.date2num(xmlstore.gui_qt4.qtdatetime2datetime(value))
             elif not isinstance(value,float):
                 assert False, 'Do not know variant type %s.' % type(value)
@@ -1456,11 +1459,11 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
             self.dataChanged.emit(startindex,stopindex)
             
         def flags(self,index):
-            return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+            return QtCore.Qt.ItemFlags.ItemIsEnabled | QtCore.Qt.ItemFlags.ItemIsSelectable | QtCore.Qt.ItemFlags.ItemIsEditable
             
-        def headerData(self,section, orientation, role=QtCore.Qt.DisplayRole):
+        def headerData(self,section, orientation, role=QtCore.Qt.ItemDataRole.DisplayRole):
             # Return no header if the orientation is not horizontal, or the role is not display or tooltip.
-            if orientation!=QtCore.Qt.Horizontal or role not in (QtCore.Qt.DisplayRole,QtCore.Qt.ToolTipRole):  return None
+            if orientation!=QtCore.Qt.Orientation.Horizontal or role not in (QtCore.Qt.ItemDataRole.DisplayRole,QtCore.Qt.ItemDataRole.ToolTipRole):  return None
             
             if isinstance(self.datastore,(data.LinkedMatrix,data.LinkedProfilesInTime)):
                 if len(self.datastore.dimensions)>0: section -= 1
@@ -1480,9 +1483,9 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
                     unit = var.getUnit()
                         
                 # If the long name is small, it will be shown directly, making the tooltip superfluous.
-                if role==QtCore.Qt.ToolTipRole and len(longname)<10: return None
+                if role==QtCore.Qt.ItemDataRole.ToolTipRole and len(longname)<10: return None
                 
-                if role==QtCore.Qt.ToolTipRole or len(longname)<10: val = longname
+                if role==QtCore.Qt.ItemDataRole.ToolTipRole or len(longname)<10: val = longname
                 if unit: val += ' (%s)' % unit
                 return val
                 
@@ -1497,7 +1500,7 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
         # createEditor (inherited from QtWidgets.QStyledItemDelegate)
         #   Creates the editor widget for the model item at the given index
         def createEditor(self, parent, option, index):
-            value = index.data(QtCore.Qt.EditRole)
+            value = index.data(QtCore.Qt.ItemDataRole.EditRole)
             if isinstance(value,float):
                 editor = xmlstore.gui_qt4.ScientificDoubleEditor(parent)
                 self.currenteditor = editor
@@ -1512,7 +1515,7 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
         # setEditorData (inherited from QtWidgets.QStyledItemDelegate)
         #   Sets value in the editor widget, for the model item at the given index
         def setEditorData(self, editor,index):
-            value = index.data(QtCore.Qt.EditRole)
+            value = index.data(QtCore.Qt.ItemDataRole.EditRole)
             if value is None: return
             if isinstance(value,float):
                 editor.setValue(value)
@@ -1532,7 +1535,7 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
     class CustomListView(QtWidgets.QListView):
         deletePressed = QtCore.Signal()
         def keyPressEvent(self,event):
-            if event.key()==QtCore.Qt.Key_Delete:
+            if event.key()==QtCore.Qt.Key.Key_Delete:
                 self.deletePressed.emit()
                 event.accept()
                 return
@@ -1541,7 +1544,7 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
     class CustomTableView(QtWidgets.QTableView):
         deletePressed = QtCore.Signal()
         def keyPressEvent(self,event):
-            if event.key()==QtCore.Qt.Key_Delete:
+            if event.key()==QtCore.Qt.Key.Key_Delete:
                 self.deletePressed.emit()
                 event.accept()
                 return
@@ -1564,7 +1567,7 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
             self.listmodel = LinkedFileDataEditor.LinkedDataModel(self.linkedfile,type=1)
             self.listTimes.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
             self.listTimes.setModel(self.listmodel)
-            self.listTimes.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            self.listTimes.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
             lo.addWidget(self.listTimes,1,0)
             self.listTimes.customContextMenuRequested.connect(self.onTableContextMenu)
             self.listTimes.selectionModel().currentChanged.connect(self.onTimeChanged)
@@ -1577,7 +1580,7 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
         self.tableData.setModel(self.tablemodel)
         self.tabledelegate = self.LinkedFileDelegate()
         self.tableData.setItemDelegate(self.tabledelegate)
-        self.tableData.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.tableData.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.tableData.customContextMenuRequested.connect(self.onTableContextMenu)
         self.tableData.deletePressed.connect(self.onDelete)
         
@@ -1675,7 +1678,7 @@ class LinkedFileDataEditor(QtWidgets.QDialog):
         if menu.isEmpty(): return
 
         # Show context menu and take action.
-        actChosen = menu.exec_(table.mapToGlobal(pos))
+        actChosen = menu.exec(table.mapToGlobal(pos))
         if not actChosen: return
         
         if actChosen==actRemoveRows:

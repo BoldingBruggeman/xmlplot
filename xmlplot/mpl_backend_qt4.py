@@ -12,10 +12,10 @@ from matplotlib import cbook
 
 from xmlstore.qt_compat import QtGui,QtCore,QtWidgets,qt4_backend
 
-if qt4_backend in ('PyQt5', 'PySide2', 'PySide6'):
+try:
     from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as _FigureCanvasQTAgg
     from matplotlib.backends.backend_qt5 import cursord
-else:
+except ImportError:
     from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as _FigureCanvasQTAgg
     from matplotlib.backends.backend_qt4 import cursord
 
@@ -32,8 +32,8 @@ class FigureCanvasQTAgg(_FigureCanvasQTAgg):
     def __init__(self, figure):
         super().__init__(figure=figure)
 
-        # JB: do NOT set QtCore.Qt.WA_OpaquePaintEvent because part of the figure is transparent.
-        self.setAttribute(QtCore.Qt.WA_OpaquePaintEvent, False)
+        # JB: do NOT set WA_OpaquePaintEvent because part of the figure is transparent.
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_OpaquePaintEvent, False)
 
     def paintEvent(self, event):
         # JB: replace default painter by one that does nothing when eraseRect is called.
